@@ -6,6 +6,10 @@
 #include <string.h>
 #include <unistd.h>
 
+#ifdef WITH_ID3TAG
+#include <id3tag.h>
+#endif /* WITH_ID3TAG */
+
 #ifdef NEED_GETOPT_H__
 #include <getopt.h>
 #endif /* NEED_GETOPT_H__ */

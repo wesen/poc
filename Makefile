@@ -6,6 +6,13 @@
 
 CFLAGS += -Wall -O2
 
+# Uncomment these flags to add id3 support to mp3cue and mp3cut
+#CFLAGS += -DWITH_ID3TAG
+#LDFLAGS += -lid3tag
+# On MacOSX using fink
+#CFLAGS += -I/sw/include
+#LDFLAGS += -L/sw/lib
+
 # Uncomment this flag to add ipv6 support to poc
 #CFLAGS+=-DWITH_IPV6
 
