@@ -32,6 +32,18 @@ static void usage(void) {
   printf("-c cuefile: cut according to cue file\n");
 }
 
+static void format_time(unsigned long time, char *str, unsigned int len) {
+  unsigned long ms = time % 1000;
+  time /= 1000;
+  unsigned long secs = time % 60;
+  time /= 60;
+  unsigned long minutes = time;
+  time /= 60;
+  unsigned long hours = time;
+
+  snprintf(str, len, "%.2lu:%.2lu:%.2lu+%.3lu", hours, minutes, secs, ms);
+}
+
 int mp3cue_write_id3(file_t *outfile, mp3cue_file_t *cuefile,
                      mp3cue_track_t *track) {
   return id3_write_tag(outfile,
@@ -167,7 +179,11 @@ int main(int argc, char *argv[]) {
     unsigned long end = (((cuefile.tracks[i].index.minutes * 60) +
 			  cuefile.tracks[i].index.seconds) * 100 +
 			 cuefile.tracks[i].index.centiseconds) * 10;
-    printf("track %d (%s), end %lu\n", i, outfilename, end);
+    char from_buf[256], to_buf[256];
+    format_time(current, from_buf, sizeof(from_buf));
+    format_time(end, to_buf, sizeof(to_buf));
+    printf("Extracting track %d (%s): %s - %s...\n", i, outfilename,
+           from_buf, end ? to_buf : "end");
 
     /* write id3 tags */
     if (!mp3cue_write_id3(&outfile, &cuefile, &cuefile.tracks[i])) {
@@ -213,7 +229,8 @@ int main(int argc, char *argv[]) {
 
 	current += frame.usec / 1000;
       } else {
-	fprintf(stderr, "Could not read the next frame from the mp3 file...\n");
+        if (i != (cuefile.track_number - 1))
+          fprintf(stderr, "Could not read the next frame from the mp3 file...\n");
 	break;
       }
     }
@@ -245,8 +262,6 @@ int main(int argc, char *argv[]) {
   
   if (cuefilename != NULL)
     free(cuefilename);
-  if (mp3filename != NULL)
-    free(mp3filename);
 
   return retval;
 }
