@@ -22,6 +22,7 @@
 #include "ogg.h"
 #include "network.h"
 #include "signal.h"
+#include "http.h"
 
 #ifdef WITH_IPV6
 static int use_ipv6 = 0;
@@ -33,11 +34,7 @@ static int finished = 0;
 **/
 #define OGG_BUF_LEN 65535
 
-/*M
-  \emph{Maximal synchronization latency for sending packets.}
-
-  In usecs.
-**/
+/* Maximal synchronization latency for sending packets in usecs. */
 #define MAX_WAIT_TIME (1 * 1000)
 
 #define MAX_FILENAME 256
@@ -46,20 +43,18 @@ static void sig_int(int signo) {
   finished = 1;
 }
 
-/*M
-  \emph{Clients array.}
-**/
-http_client_t *client = NULL;
-int client_num = 0;
+int ogg_callback(http_client_t *client, void *data) {
+  vorbis_stream_t *vorbis = data;
+  
+  /* XXX write ogg headers */
+  int i;
+  for (i = 0; i < vorbis->hdr_pages_cnt; i++) {
+    if (write(client->fd, vorbis->hdr_pages[i].raw.data,
+              vorbis->hdr_pages[i].size) != vorbis->hdr_pages[i].size)
+      return -1;
+  }
 
-callback() {
-      /* XXX write ogg headers */
-      int i;
-      for (i = 0; i < vorbis->hdr_pages_cnt; i++) {
-        if (write(client->fd, vorbis->hdr_pages[i].raw.data,
-                  vorbis->hdr_pages[i].size) != vorbis->hdr_pages[i].size)
-          return -1;
-    }
+  return 0;
 }  
 
 /*M
@@ -72,7 +67,7 @@ callback() {
   sleep desynchronizes itself from the stream more than \verb|MAX_WAIT_TIME|,
   the synchronization is reset.
 **/
-int pogg_mainloop(int sock, char *filename, int quiet) {
+int pogg_mainloop(http_server_t *server, char *filename, int quiet) {
   /*M
     Open file for reading.
   **/
@@ -112,7 +107,7 @@ int pogg_mainloop(int sock, char *filename, int quiet) {
       Go through HTTP main routine and check for timeouts,
       received data, etc...
     **/
-    if (!http_main(sock, &vorbis)) {
+    if (!http_server_main(server, &vorbis)) {
       fprintf(stderr, "Http main error\n");
       file_close(&vorbis.file);
       vorbis_stream_destroy(&vorbis);
@@ -124,15 +119,16 @@ int pogg_mainloop(int sock, char *filename, int quiet) {
       Write frame to HTTP clients.
     **/
     int i;
-    for (i = 0; i < client_num; i++) {
-      if ((client[i].fd != -1) && (client[i].found >= 2)) {
+    for (i = 0; i < server->num_clients; i++) {
+      if ((server->clients[i].fd != -1) &&
+          (server->clients[i].found >= 2)) {
 	int ret;
 	
-	ret = write(client[i].fd, page.raw.data, page.size);
+	ret = write(server->clients[i].fd, page.raw.data, page.size);
 	
 	if (ret != page.size) {
 	  fprintf(stderr, "Error writing to client %d\n", i);
-	  client_close(client + i);
+	  http_client_close(server, server->clients + i);
 	}
       }
     }
@@ -220,7 +216,7 @@ static void usage(void) {
   fprintf(stderr, "\t-s address : source address (default 0.0.0.0)\n");
   fprintf(stderr, "\t-p port    : port to listen on (default 8000)\n");
   fprintf(stderr, "\t-q         : quiet\n");
-  fprintf(stderr, "\t-c clients : maximal number of clients (default 16)\n");
+  fprintf(stderr, "\t-c clients : maximal number of clients (default 0, illimited)\n");
 #ifdef WITH_IPV6
   fprintf(stderr, "\t-6         : use ipv6\n");
 #endif
@@ -235,7 +231,10 @@ int main(int argc, char *argv[]) {
    char *address = NULL;
    unsigned short port = 8000;
    int quiet = 0;
-   int clients = 16;
+   int max_clients = 0;
+   http_server_t server;
+
+   http_server_reset(&server);
    
    if (argc <= 1) {
       usage();
@@ -267,7 +266,7 @@ int main(int argc, char *argv[]) {
        break;
 
      case 'c':
-       clients = (unsigned short)atoi(optarg);
+       max_clients = (unsigned short)atoi(optarg);
        break;
 
      case 'q':
@@ -299,17 +298,6 @@ int main(int argc, char *argv[]) {
 #endif /* WITH_IPV6 */
    }
 
-   client = malloc(sizeof(http_client_t) * clients);
-   assert(client != NULL);
-   client_num = clients;
-   
-   /*M
-     Initialise the client structures.
-   **/
-   int j;
-   for (j = 0; j < clients; j++)
-      client_init(client + j);
-
    if (sig_set_handler(SIGINT, sig_int) == SIG_ERR) {
      retval = EXIT_FAILURE;
      goto exit;
@@ -336,6 +324,13 @@ int main(int argc, char *argv[]) {
      goto exit;
    }
 
+   if (!http_server_init(&server, HTTP_MIN_CLIENTS,
+                         max_clients, ogg_callback, sock)) {
+     fprintf(stderr, "Could not initialise HTTP server\n");
+     retval = EXIT_FAILURE;
+     goto exit;
+   }
+
    /*M
      Read in ogg files one after the other.
    **/
@@ -346,21 +341,12 @@ int main(int argc, char *argv[]) {
      strncpy(filename, argv[i], MAX_FILENAME - 1);
      filename[MAX_FILENAME - 1] = '\0';
 
-     if (!pogg_mainloop(sock, filename, quiet))
+     if (!pogg_mainloop(&server, filename, quiet))
        continue;
    }
 
 exit:
-   /*M
-     Close all HTTP client connections.
-   **/
-   if (client != NULL) {
-     for (j = 0; j < clients; j++)
-       client_close(client + j);
-   }
-
-   if (close(sock) < 0)
-      perror("close");
+   http_server_close(&server);
 
    return retval;
 }

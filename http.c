@@ -18,19 +18,18 @@
 #include "http.h"
 
 static void http_client_init(http_client_t *client);
-static int http_client_close(http_server_t *server,
-                             http_client_t *client);
 static int http_handle_client(http_server_t *server,
                               http_client_t *client, void *data);
 
 static void http_server_assert(http_server_t *server) {
   assert(server != NULL);
   assert(server->clients != NULL);
-  assert(server->count_clients <= server->max_clients);
+  assert((server->max_clients == 0) ||
+         (server->count_clients <= server->max_clients));
   assert(server->count_clients <= server->num_clients);
 }
 
-static void http_server_reset(http_server_t *server) {
+void http_server_reset(http_server_t *server) {
   assert(server != NULL);
   
   server->clients     = NULL;
@@ -68,15 +67,17 @@ int http_server_init(http_server_t *server,
 }
 
 void http_server_close(http_server_t *server) {
-  http_server_assert(server);
+  assert(server != NULL);
 
-  unsigned int i;
-  for (i = 0; i < server->num_clients; i++) {
-    if (server->clients[i].fd != -1) {
-      close(server->clients[i].fd);
+  if (server->clients != NULL) {
+    unsigned int i;
+    for (i = 0; i < server->num_clients; i++) {
+      if (server->clients[i].fd != -1) {
+        close(server->clients[i].fd);
+      }
     }
+    free(server->clients);
   }
-  free(server->clients);
   server->clients       = NULL;
   server->num_clients   = 0;
   server->count_clients = 0;
@@ -93,7 +94,7 @@ int http_server_realloc(http_server_t *server,
                         unsigned int new_num_clients) {
   http_server_assert(server);
   assert(new_num_clients >= server->count_clients);
-  
+
   http_client_t *new_clients = malloc(sizeof(http_client_t) * new_num_clients);
   if (new_clients == NULL)
     return 0;
@@ -107,6 +108,9 @@ int http_server_realloc(http_server_t *server,
       new_count_clients++;
     }
   }
+  for (i = new_count_clients; i < new_num_clients; i++)
+    http_client_init(new_clients + i);
+  
   assert(new_count_clients == server->count_clients);
   free(server->clients);
   server->clients = new_clients;
@@ -154,7 +158,8 @@ int http_server_accept(http_server_t *server) {
     return 0;
   }
 
-  if (server->count_clients < server->max_clients) {
+  if ((server->max_clients == 0) ||
+      (server->count_clients < server->max_clients)) {
     if (server->count_clients == server->num_clients) {
       if (!http_server_realloc(server, server->num_clients * 2)) {
         fprintf(stderr, "Could not grow the size of the server structure\n");
@@ -197,8 +202,8 @@ void http_server_check(http_server_t *server) {
 }
 
 /* Destroy a client structure. */
-static int http_client_close(http_server_t *server,
-                             http_client_t *client) {
+int http_client_close(http_server_t *server,
+                      http_client_t *client) {
   int retval = 0;
   
   if (client->fd != -1) {
@@ -210,7 +215,7 @@ static int http_client_close(http_server_t *server,
   
   /* trim down memory size */
   if ((server->count_clients <= (server->num_clients / 4)) &&
-      (server->num_clients > 16)) {
+      (server->num_clients > HTTP_MIN_CLIENTS)) {
     if (!http_server_realloc(server, server->num_clients / 2)) {
       /* not really critical */
       fprintf(stderr,
@@ -334,8 +339,12 @@ static int http_handle_client(http_server_t *server,
     if (write(client->fd, "HTTP/1.0 200 OK\r\n\r\n", 19) != 19)
       return -1;
 
-    if (server->callback != NULL)
-      server->callback(client, data);
+    if (server->callback != NULL) {
+      if (server->callback(client, data) < 0) {
+        http_bad_request(client, 500, "Server Internal Error", "Callback returned error");
+        return -1;
+      }
+    }
     
     return 1;
   } else {

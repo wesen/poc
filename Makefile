@@ -149,13 +149,13 @@ poc-fec-ploss: $(POC_FEC_PLOSS_OBJS)
 SERVERS_OBJS += $(POC_FEC_OBJS) $(POC_FEC_PLOSS_OBJS)
 
 # mp3 and ogg HTTP server
-POC_HTTP_OBJS := $(MP3_OBJS) $(NETWORK_OBJS) $(UTILS_OBJS) poc-http.o
+POC_HTTP_OBJS := $(MP3_OBJS) $(NETWORK_OBJS) $(UTILS_OBJS) http.o poc-http.o
 include poc-http.d
 poc-http: $(POC_HTTP_OBJS)
 	$(CC) $(CFLAGS) -o $@ $(POC_HTTP_OBJS) $(LDFLAGS) $(LIBS)
 SERVERS_OBJS += $(POC_HTTP_OBJS)
 
-POGG_HTTP_OBJS := $(OGG_OBJS) $(NETWORK_OBJS) $(UTILS_OBJS) pogg-http.o
+POGG_HTTP_OBJS := $(OGG_OBJS) $(NETWORK_OBJS) $(UTILS_OBJS) http.o pogg-http.o
 include pogg-http.d
 pogg-http: $(POGG_HTTP_OBJS)
 	$(CC) $(CFLAGS) -o $@ $(POGG_HTTP_OBJS) $(LDFLAGS) $(LIBS)
