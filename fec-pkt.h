@@ -38,7 +38,7 @@ typedef struct fec_pkt_hdr_s {
 /*M
   \emph{Maximal FEC packet payload size.}
 **/
-#define FEC_PKT_PAYLOAD_SIZE FEC_PKT_SIZE - FEC_PKT_HDR_SIZE
+#define FEC_PKT_PAYLOAD_SIZE (FEC_PKT_SIZE - FEC_PKT_HDR_SIZE)
 
 /*M
   \emph{FEC packet magic byte.}

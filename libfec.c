@@ -131,7 +131,7 @@ fec_encode_t *libfec_new_encode(unsigned char fec_k,
     goto exit;
   memset(encode->adus, 0, FEC_PKT_PAYLOAD_SIZE * fec_k);
 
-  encode->adu_ptrs = malloc(fec_k * sizeof(unsigned char *));
+  encode->adu_ptrs = malloc(encode->fec_k * sizeof(unsigned char *));
   if (encode->adu_ptrs == NULL)
     goto exit;
   encode->lengths = malloc(sizeof(unsigned int) * fec_k);
@@ -175,8 +175,7 @@ int libfec_add_adu(fec_encode_t *encode,
     return 0;
 
   encode->lengths[encode->count] = len;
-  memcpy(encode->adus + FEC_PKT_PAYLOAD_SIZE * encode->count,
-         data, len);
+  memcpy(encode->adu_ptrs[encode->count], data, len);
   encode->count++;
   if (encode->max_length < len)
     encode->max_length = len;

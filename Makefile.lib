@@ -4,11 +4,11 @@
 #
 # 2005 bl0rg.net
 
-all: libs
+all: libs libfec-test
 
 libs: libfec.so
 
-CFLAGS += -Wall -O2 -fPIC
+CFLAGS += -Wall -O2 -fPIC -g
 
 # Create dependencies
 %.d: %.c
@@ -34,8 +34,13 @@ include libfec.d
 
 libfec.a: $(LIBFEC_OBJS)
 	ar r $@ $(LIBFEC_OBJS)
+	ranlib $@
 
 libfec.so: $(LIBFEC_OBJS)
-	$(LD) -o $@ -shared $(LIBFEC_OBJS)
-#	$(CC) -dynamiclib -o $@ $(LIBFEC_OBJS)
+#	$(LD) -o $@ -shared $(LIBFEC_OBJS)
+	$(CC) -dynamiclib -o $@ $(LIBFEC_OBJS)
+
+include libfec-test.d
+libfec-test: libfec.a libfec-test.o
+	$(CC) -o $@ libfec-test.o -L. -lfec
 
