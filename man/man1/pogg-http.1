@@ -1,0 +1,49 @@
+.TH POGG\-HTTP 1 "February 2005" "" "User Command"
+.SH NAME
+.B pogg\-http
+\- send HTTP OGG streams 
+.SH SYNOPSIS
+.B pogg\-http
+.RB [
+.I \-s address
+.RB ]
+.RB [
+.I \-p port
+.RB ]
+.RB [
+.I \-t ttl
+.RB ]
+.RB [
+.I \-q
+.RB ]
+.RB [
+.I \-k http_k
+.RB ]
+.RB [
+.I \-n http_n
+.RB ]
+.I files...
+.SH DESCRIPTION
+.B pogg\-http
+is a streaming server sending ogg data using the HTTP protocol. It sends the
+.I files
+in the order given on the command-line. Use the filename 
+.I \-
+to stream from standard input.
+.SH OPTIONS
+.IP "-s address"
+Specify the address to listen to (default 0.0.0.0). 
+.IP "-p port"
+Specify the port to listen to.
+.IP "-q"
+Don't output any information on standard error.
+.IP "-c clients"
+Specify the maximal number of clients (default 16).
+.SH EXAMPLES
+.IP "pogg-http -p 8989 -c 32 bla.ogg"
+Send the file 
+.I bla.ogg
+using the HTTP protocol, accepting connections on the port 8989. The
+server will accept a maximum of 32 connections.
+.SH AUTHORS
+Manuel Odendahl <manuel@bl0rg.net>, Florian Wesch <dividuum@bl0rg.net>

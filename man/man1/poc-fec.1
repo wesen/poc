@@ -1,0 +1,66 @@
+.TH POC\-FEC 1 "February 2005" "" "User Command"
+.SH NAME
+.B poc\-fec
+\- send FEC MP3 streams 
+.SH SYNOPSIS
+.B poc\-fec
+.RB [
+.I \-s address
+.RB ]
+.RB [
+.I \-p port
+.RB ]
+.RB [
+.I \-t ttl
+.RB ]
+.RB [
+.I \-q
+.RB ]
+.RB [
+.I \-k fec_k
+.RB ]
+.RB [
+.I \-n fec_n
+.RB ]
+.I files...
+.SH DESCRIPTION
+.B poc\-fec
+is a streaming server sending mp3 data using a custom FEC
+protocol. The streamed MP3 frames are first decomposed in autonomous
+data units (ADUs). These ADUs are grouped into ADU groups, which are
+encoded redundantly using a FEC method by Luigi Rizzo. A group of k
+ADUs is encoded as n data packets. Any k of these n data packets is
+sufficient to recover the original k ADUs. It sends the
+.I files
+in the order given on the command-line. Use the filename 
+.I \-
+to stream from standard input. Normally, the FEC protocol is used to
+stream to multicast groups.
+.SH OPTIONS
+.IP "-s address"
+Specify the address to send to (default 224.0.1.23). 
+.IP "-p port"
+Specify the port to send to.
+.IP "-t ttl"
+Specify the TTL parameter to be set on outgoing parameters (default 1).
+.IP "-q"
+Don't output any information on standard error.
+.IP "-k fec_k"
+Specify the number of ADUs that will be encoded as an ADU group (default 20).
+.IP "-n fec_n"
+Specify the number of packets that the ADU groups will be encoded to
+(default 25). This number must be greater than the fec_k parameter.
+.SH EXAMPLES
+.IP "poc-fec -s 224.0.1.24 -p 8989 -t 2 -k 16 -n 32 bla.mp3"
+Send the file 
+.I bla.mp3
+using the RTP RFC fec protocol to the address 224.0.1.24 on port 8989,
+and set the TTL to 2. MP3 frames of bla.mp3 are converted to ADUs and
+grouped in ADU groups of 16 ADUs. These 16 ADUs are encoded into 32
+packets and streamed. A client will have to receive at least 16
+packets to recover the original ADUs.
+.SH AUTHORS
+Manuel Odendahl <manuel@bl0rg.net>, Florian Wesch <dividuum@bl0rg.net>
+
+
+

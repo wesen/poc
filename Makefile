@@ -165,11 +165,9 @@ servers-clean:
 	- rm -f $(SERVERS) $(SERVERS_EXE) $(SERVERS_OBJS)
 
 # Clients
-CLIENTS := pob-2250 \
+CLIENTS := pob-fec \
            pob-3119 \
-           pob-fec \
-           pob-3119-rb \
-           pob-2250-rb
+           pob-2250
 CLIENTS_EXE := $(patsubst %,%.exe,$(CLIENTS))
 CLIENTS_OBJS :=
 
@@ -178,24 +176,16 @@ clients: $(CLIENTS)
 RTP_CLIENT_OBJS := $(RTP_OBJS) $(NETWORK_OBJS) $(UTILS_OBJS) $(MP3_OBJS)
 
 # RFC 2250 client
-POB_2250_OBJS := $(RTP_CLIENT_OBJS) pob-2250.o
-include pob-2250.d
-pob-2250: $(POB_2250_OBJS)
-	$(CC) $(CFLAGS) -o $@ $(POB_2250_OBJS) $(LDFLAGS) $(LIBS)
 POB_2250_RB_OBJS := $(RTP_CLIENT_OBJS) pob-2250-rb.o
 include pob-2250-rb.d
-pob-2250-rb: $(POB_2250_RB_OBJS)
+pob-2250: $(POB_2250_RB_OBJS)
 	$(CC) $(CFLAGS) -o $@ $(POB_2250_RB_OBJS) $(LDFLAGS) $(LIBS)
 CLIENTS_OBJS += $(POB_2250_OBJS) $(POB_2250_RB_OBJS)
 
 # RFC 3119 client
-POB_3119_OBJS := $(RTP_CLIENT_OBJS) pob-3119.o
-include pob-3119.d
-pob-3119: $(POB_3119_OBJS)
-	$(CC) $(CFLAGS) -o $@ $(POB_3119_OBJS) $(LDFLAGS) $(LIBS)
 POB_3119_RB_OBJS := $(RTP_CLIENT_OBJS) pob-3119-rb.o
 include pob-3119-rb.d
-pob-3119-rb: $(POB_3119_RB_OBJS)
+pob-3119: $(POB_3119_RB_OBJS)
 	$(CC) $(CFLAGS) -o $@ $(POB_3119_RB_OBJS) $(LDFLAGS) $(LIBS)
 CLIENTS_OBJS += $(POB_3119_OBJS) $(POB_3119_RB_OBJS)
 

@@ -299,7 +299,7 @@ int pob_mainloop(int sock, int quiet) {
   \emph{Print RFC2250 RTP client usage.}
 **/
 static void usage(void) {
-  fprintf(stderr, "Usage: ./pob [-s address] [-p port] [-b size] [-t time] [-q]");
+  fprintf(stderr, "Usage: ./pob [-s address] [-p port] [-b size] [-q]");
 #ifdef WITH_OPENSSL
   fprintf(stderr, "[-c cert]");
 #endif

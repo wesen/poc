@@ -1,1 +1,45 @@
+.TH POB\-FEC 1 "February 2005" "" "User Command"
+.SH NAME
+.B pob\-fec
+\- receive FEC MP3 streams 
+.SH SYNOPSIS
+.B pob\-fec
+.RB [
+.I \-s address
+.RB ]
+.RB [
+.I \-p port
+.RB ]
+.RB [
+.I \-b size
+.RB ]
+.RB [
+.I \-q
+.RB ]
+.SH DESCRIPTION
+.B pob\-fec
+receives a FEC MP3 stream using a custom protocol. The streamed MP3
+frames are first decomposed in autonomous data units (ADUs). These
+ADUs are grouped into ADU groups, which are encoded redundantly using
+a FEC method by Luigi Rizzo. For example, a group if 8 ADUs can be
+encoded into 16 packets. Any 8 received packets of these 16 packets is
+sufficient to recover the original 8 ADUs. The incoming MP3 stream is
+decoded, buffered and written to stdout.
+.SH OPTIONS
+.IP "-s address"
+Specify the address to listen to (default 224.0.1.23). If the address
+is a multicast address, group membership is requested automatically.
+.IP "-p port"
+Specify the port to listen to.
+.IP "-b size"
+Specify the number of ADU groups that are hold in the buffer (default 16).
+.IP "-q"
+Don't output any information on standard error.
+.SH EXAMPLES
+.IP "pob-fec -s 224.0.1.24 -p 8989 | mpg123 -"
+Receive the MP3 FEC stream sent to 224.0.1.24 on port 8989 and feed it
+into the MP3 decoder mpg123.
+.SH AUTHORS
+Manuel Odendahl <manuel@bl0rg.net>, Florian Wesch <dividuum@bl0rg.net>
+
 

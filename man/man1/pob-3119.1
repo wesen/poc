@@ -1,0 +1,41 @@
+.TH POB\-3119 1 "February 2005" "" "User Command"
+.SH NAME
+.B pob\-3119
+\- receive RTP RFC 3119 MP3 streams 
+.SH SYNOPSIS
+.B pob\-3119
+.RB [
+.I \-s address
+.RB ]
+.RB [
+.I \-p port
+.RB ]
+.RB [
+.I \-b size
+.RB ]
+.RB [
+.I \-q
+.RB ]
+.SH DESCRIPTION
+.B pob\-3119
+receives a RTP MP3 Stream using the protocol described in RFC
+3119. The incoming stream is buffered and written to standard out in
+order to be fed into a MP3 decoder.
+.SH OPTIONS
+.IP "-s address"
+Specify the address to listen to (default 224.0.1.23). If the address
+is a multicast address, group membership is requested automatically.
+.IP "-p port"
+Specify the port to listen to.
+.IP "-b size"
+Specify the maximal number of packet that are hold in the ring buffer
+(default 128).
+.IP "-q"
+Don't output any information on standard error.
+.SH EXAMPLES
+.IP "pob-3119 -s 224.0.1.24 -p 8989 | mpg123 -"
+Receive the MP3 RTP stream sent to 224.0.1.24 on port 8989 and feed it
+into the MP3 decoder mpg123.
+.SH AUTHORS
+Manuel Odendahl <manuel@bl0rg.net>, Florian Wesch <dividuum@bl0rg.net>
+
