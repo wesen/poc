@@ -267,7 +267,7 @@ int pob_mainloop(int sock, int quiet) {
           break;
 
         /* decode group into adu queue */
-        if (!fec_group_decode(group, &frame_queue)) {
+        if (!fec_group_decode_to_adus(group, &frame_queue)) {
           fprintf(stderr, "Could not decode group\n");
           /* XXX really continue? */
         }

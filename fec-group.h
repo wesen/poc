@@ -48,6 +48,8 @@ typedef struct fec_group_s {
     Buffer to be filled with packet payloads.
   **/
   unsigned char *buf;
+
+  int decoded;
 } fec_group_t;
 
 void fec_group_init(fec_group_t *group,
@@ -60,4 +62,5 @@ void fec_group_destroy(fec_group_t *group);
 void fec_group_clear(fec_group_t *group);
 void fec_group_insert_pkt(fec_group_t *group,
                           fec_pkt_t *pkt);
-int fec_group_decode(fec_group_t *group, aq_t *aq);
+int fec_group_decode(fec_group_t *group);
+int fec_group_decode_to_adus(fec_group_t *group, aq_t *aq);

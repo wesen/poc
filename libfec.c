@@ -65,7 +65,10 @@ void libfec_add_pkt(fec_decode_t *group,
   fec_group_insert_pkt(group, &pkt);
 }
 
-int libfec_decode(fec_decode_t *group) {
+unsigned int libfec_decode(fec_decode_t *group,
+                           unsigned char *dst,
+                           unsigned int idx,
+                           unsigned int len) {
   assert(initialized);
   if (!fec_group_decode(group, &fec_aq))
     return 0;

@@ -41,6 +41,8 @@ void fec_group_init(fec_group_t *group,
   for (i = 0; i < fec_n; i++) {
     group->pkts[i] = 0;
   }
+
+  group->decoded = 0;
 }
 
 /*M
@@ -128,20 +130,20 @@ void fec_group_insert_pkt(fec_group_t *group,
   If the group is not complete, the lower packets (with \verb|packet_seq| $<$
   \verb|fec_k|) are added to the ADU.
 **/
-int fec_group_decode(fec_group_t *group, aq_t *aq) {
-  /*M
-    Check if enough packets in the group have been received to
-    recover the complete source data.
-  **/
+int fec_group_decode(fec_group_t *group) {
+  assert(group != NULL);
+  
+  if (group->decoded)
+    return 1;
+  
+  /* check if enough packets in the group have been received to
+   * recover the complete source data.
+   */
   if (group->rcvd_pkts >= group->fec_k) {
-    /*M
-      We have enough packets in the FEC group
-    **/
+    /* we have enough packets in the fec group */
     unsigned int idxs[group->fec_k];
 
-    /*M
-      Create index array and pointer array.
-    **/
+    /* create index array and pointer array. */
     int i, j;
     for (i = 0, j = 0; i < group->fec_n; i++) {
       if (group->pkts[i] == 1) {
@@ -154,15 +156,11 @@ int fec_group_decode(fec_group_t *group, aq_t *aq) {
 
     assert(j == group->fec_k);
 
-    /*M
-      Create the fec structure.
-    **/
+    /* create the fec structure. */
     fec_t *fec = fec_new(group->fec_k, group->fec_n);
     assert(fec != NULL);
 
-    /*M
-      Decode the FEC group.
-    **/
+    /* decode the fec group. */
     if (!fec_decode(fec, group->buf, idxs, group->fec_len)) {
       fprintf(stderr, "Could not decode FEC group\n");
       fec_free(fec);
@@ -170,10 +168,25 @@ int fec_group_decode(fec_group_t *group, aq_t *aq) {
     }
 
     fec_free(fec);
-    
+
+    group->decoded = 1;
+
+    return 1;
+  }  else {
+    return 0;
+  }
+}
+
+int fec_group_decode_to_adus(fec_group_t *group,
+                             aq_t *aq) {
+  assert(group != NULL);
+  assert(aq != NULL);
+
+  if (fec_group_decode(group)) {
     /*M
       Add the adus to the adu queue.
     **/
+    int i;
     for (i = 0; i < group->fec_k; i++) {
       adu_t adu;
       memcpy(adu.raw,
