@@ -12,6 +12,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
+#include <errno.h>
 
 #ifdef NEED_GETOPT_H__
 #include <getopt.h>
@@ -38,6 +39,30 @@ static int finished = 0;
 
 static void sig_int(int signo) {
   finished = 1;
+}
+
+int my_write(int fd, unsigned char *buf, size_t size) {
+  int i, len = 0;
+
+  while ((i = write(fd, buf + len, size - len))) {
+    if (i < 0) {
+      if (errno == EINTR)
+        continue;
+      else {
+        perror("write");
+        return -1;
+      }
+    } else {
+      len += i;
+      if (len == size)
+        break;
+    }
+  }
+
+  if (i == 0)
+    return 0;
+  else
+    return len;
 }
 
 /*M
@@ -99,7 +124,7 @@ int poc_mainloop(http_server_t *server, char *filename, int quiet) {
           (server->clients[i].found >= 2)) {
         int ret;
         
-        ret = write(server->clients[i].fd, frame.raw, frame.frame_size);
+        ret = my_write(server->clients[i].fd, frame.raw, frame.frame_size);
         
         if (ret != frame.frame_size) {
           fprintf(stderr, "Error writing to client %d\n", i);
