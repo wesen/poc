@@ -80,7 +80,7 @@ module POC
             def encode(idx)
                 bufferlen = maxlen
                 buffer    = (" " * bufferlen).to_ptr
-                encoded = FEC::libfec_encode(@group, buffer, idx, bufferlen)
+                encoded   = FEC::libfec_encode(@group, buffer, idx, bufferlen)
                 buffer.to_s(encoded)
             end
 
@@ -108,7 +108,7 @@ module POC
             end
 
             def decode(idx)
-                buffer    = (" " * @maxlen).to_ptr
+                buffer  = (" " * @maxlen).to_ptr
                 decoded = FEC::libfec_decode(@group, buffer, idx, @maxlen) 
                 return nil if decoded == 0
                 buffer.to_s(decoded)
@@ -120,7 +120,7 @@ module POC
         end
 
         def encode(pkts, k)
-            raise Error.new("#pkts #{pkts.size} > k (#{k})") if pkts.size > k
+            raise Error.new("#pkts (#{pkts.size}) > k (#{k})") if pkts.size > k
             res    = []
             maxlen = 0 
             Encoder.new(pkts.size, k) do |encoder|
