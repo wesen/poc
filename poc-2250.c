@@ -82,7 +82,7 @@ int poc_mainloop(int sock, char *filename, int quiet) {
   pkt.b.m = 1;
 
   static long wait_time = 0;
-  static unsigned long rtp_time = 0;
+  unsigned long rtp_time = 0;
 
   /*M
     Get start time.
@@ -156,29 +156,32 @@ int poc_mainloop(int sock, char *filename, int quiet) {
       Print sender information.
     **/
     if (!quiet) {
-      if (mp3_file.size > 0) {
-	fprintf(stdout,
-		"\r%02ld:%02ld/%02ld:%02ld %7ld/%7ld (%3ld%%) %3ldkbit/s %4ldb ",
-		(rtp_time/1000000) / 60,
-		(rtp_time/1000000) % 60,
-		(long)((float)(rtp_time/1000) / 
-		       ((float)mp3_file.offset+1) * (float)mp3_file.size) / 
-		60000,
-		(long)((float)(rtp_time/1000) / 
-		       ((float)mp3_file.offset+1) * (float)mp3_file.size) / 
-		1000 % 60,
-		mp3_file.offset,
-		mp3_file.size,
-		(long)(100*(float)mp3_file.offset/(float)mp3_file.size),
-		mp3_frame.bitrate/1000,
-		mp3_frame.frame_size);
-      } else {
-	fprintf(stdout, "\r%02ld:%02ld %ld %3ldkbit/s %4ldb ",
-		(rtp_time/1000000) / 60,
-		(rtp_time/1000000) % 60,
-		mp3_file.offset,
-		mp3_frame.bitrate/1000,
-		mp3_frame.frame_size);
+      static int count = 0;
+      if ((count++ % 10) == 0) {
+        if (mp3_file.size > 0) {
+          fprintf(stdout,
+                  "\r%02ld:%02ld/%02ld:%02ld %7ld/%7ld (%3ld%%) %3ldkbit/s %4ldb ",
+                  (rtp_time/1000000) / 60,
+                  (rtp_time/1000000) % 60,
+                  (long)((float)(rtp_time/1000) / 
+                         ((float)mp3_file.offset+1) * (float)mp3_file.size) / 
+                  60000,
+                  (long)((float)(rtp_time/1000) / 
+                         ((float)mp3_file.offset+1) * (float)mp3_file.size) / 
+                  1000 % 60,
+                  mp3_file.offset,
+                  mp3_file.size,
+                  (long)(100*(float)mp3_file.offset/(float)mp3_file.size),
+                  mp3_frame.bitrate,
+                  mp3_frame.frame_size);
+        } else {
+          fprintf(stdout, "\r%02ld:%02ld %ld %3ldkbit/s %4ldb ",
+                  (rtp_time/1000000) / 60,
+                  (rtp_time/1000000) % 60,
+                  mp3_file.offset,
+                  mp3_frame.bitrate,
+                  mp3_frame.frame_size);
+        }
       }
       fflush(stdout);
     }

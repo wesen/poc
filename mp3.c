@@ -34,7 +34,7 @@ unsigned short sampleratetable[4] = {
 **/
 void mp3_calc_hdr(mp3_frame_t *frame) {
   assert(frame != NULL);
-  
+
   frame->bitrate    = bitratetable[frame->bitrate_index];
   frame->samplerate = sampleratetable[frame->samplerfindex];
   frame->samplelen  = 1152; /* only layer III */

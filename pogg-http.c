@@ -85,7 +85,7 @@ int pogg_mainloop(http_server_t *server, char *filename, int quiet) {
     fprintf(stderr, "\rStreaming %s...\n", filename);
   
   static long wait_time = 0;
-  static unsigned long page_time = 0, last_time = 0;
+  unsigned long page_time = 0, last_time = 0;
   
   ogg_page_t page;
   ogg_page_init(&page);

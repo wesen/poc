@@ -126,6 +126,7 @@ int poc_mainloop(http_server_t *server, char *filename, int quiet) {
           fprintf(stderr, "\r%02ld:%02ld/%02ld:%02ld %7ld/%7ld (%3ld%%) %3ldkbit/s %4ldb ",
                   (frame_time/1000000) / 60,
                   (frame_time/1000000) % 60,
+
                   (long)((float)(frame_time/1000) / 
                          ((float)mp3_file.offset+1) * (float)mp3_file.size) / 
                   60000,
@@ -135,14 +136,14 @@ int poc_mainloop(http_server_t *server, char *filename, int quiet) {
                   mp3_file.offset,
                   mp3_file.size,
                   (long)(100*(float)mp3_file.offset/(float)mp3_file.size),
-                  frame.bitrate/1000,
+                  frame.bitrate,
                   frame.frame_size);
         } else {
           fprintf(stderr, "\r%02ld:%02ld %ld %3ldkbit/s %4ldb ",
                   (frame_time/1000000) / 60,
                   (frame_time/1000000) % 60,
                   mp3_file.offset,
-                  frame.bitrate/1000,
+                  frame.bitrate,
                   frame.frame_size);
         }
       }
