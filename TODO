@@ -89,11 +89,13 @@ X OGG Vorbis support
 ---- 2te release
 
   - README schreiben
+  - Manpages
   X id3tag support in mp3cue und mp3cut
   X print information in servers and clients not so intensive
   - check errors in mp3cue (?)
   - id3tag support in poc-http (UDP socket?)
-  - variable number of clients in poc-http
+  X variable number of clients in poc-http
+  - kbits anzeig in poc-*
   - Zeitanzeige in poc-*
 
 ---- 3te release
