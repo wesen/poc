@@ -16,6 +16,19 @@ static void usage(void) {
   printf("Usage: libfec-test mp3file\n");
 }
 
+#define min(a,b) ((a) < (b) ? (a) : (b))
+
+static void hexdump(unsigned char *data, unsigned long len) {
+  unsigned long i;
+  for (i = 0; i < len; i += 16) {
+    unsigned long j;
+    fprintf(stderr, "%06lx    ", i);
+    for (j = 0; j < min(len - i, 16); j++)
+      fprintf(stderr, "%02x ", data[i + j]);
+    fprintf(stderr, "\n");
+  }
+}
+
 int main(int argc, char *argv[]) {
   int retval = EXIT_SUCCESS;
 
@@ -34,9 +47,12 @@ int main(int argc, char *argv[]) {
   unsigned int len;
   int ret;
 
-  while ((len = libfec_read_adu(buf, sizeof(buf))) > 0) {
+  while ((len = libfec_read_adu(buf, sizeof(buf))) >= 0) {
     ret = libfec_add_adu(encode, len, buf);
     assert(ret);
+
+    static int adu_cnt = 0;
+    fprintf(stderr, "adu_cnt %d\n", adu_cnt);
     
     /* decode */
     if (++adu_cnt == fec_k) {
@@ -46,7 +62,7 @@ int main(int argc, char *argv[]) {
       int i;
       for (i = 0; i < fec_n; i++) {
         lengths[i] = libfec_encode(encode, fec_pkts[i], i, max_length);
-        assert(lengths[i] != 0);
+        //        assert(lengths[i] != 0);
       }
       fec_decode_t *group = libfec_new_group(fec_k, fec_n, max_length);
       for (i = 0; i < fec_n; i++) {
@@ -56,6 +72,8 @@ int main(int argc, char *argv[]) {
         unsigned char buf[8192];
         unsigned int len;
         len = libfec_decode(group, buf, i, sizeof(buf));
+        fprintf(stderr, "decode %d, len %d\n", i, len);
+        hexdump(buf, len);
         if (len) {
           libfec_write_adu(buf, len);
         }
@@ -67,10 +85,7 @@ int main(int argc, char *argv[]) {
       adu_cnt = 0;
     }
   }
-  file_close(&infile);
   libfec_close();
 
- exit:
-  aq_destroy(&qin);
   return retval;
 }

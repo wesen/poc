@@ -22,7 +22,7 @@ typedef struct fec_encode_s fec_encode_t;
 void libfec_init(char *infile, char *outfile);
 void libfec_close(void);
 
-unsigned int libfec_read_adu(unsigned char *dst, unsigned int len);
+int libfec_read_adu(unsigned char *dst, unsigned int len);
 void libfec_write_adu(unsigned char *buf, unsigned int len);
 
 /* fec_len is the maximum packet size in the group */

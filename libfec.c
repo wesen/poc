@@ -58,11 +58,11 @@ void libfec_close(void) {
   initialized = 0;
 }
 
-unsigned int libfec_read_adu(unsigned char *dst, unsigned int len) {
+int libfec_read_adu(unsigned char *dst, unsigned int len) {
   assert(dst != NULL);
   assert(initialized);
   assert(infile_open);
-
+  
   mp3_frame_t frame;
   while (mp3_next_frame(&infile, &frame) > 0) {
     if (aq_add_frame(&qin, &frame)) {
@@ -78,14 +78,16 @@ unsigned int libfec_read_adu(unsigned char *dst, unsigned int len) {
     }
   }
 
-  return 0;
+  return -1;
 }
 
 void libfec_write_adu(unsigned char *buf, unsigned int len) {
   assert(buf != NULL);
   assert(initialized);
   assert(outfile_open);
-  
+
+  fprintf(stderr, "write adu %p, len %d\n", buf, len);
+
   adu_t adu;
   memcpy(adu.raw, buf, len);
   int ret = mp3_unpack(&adu);
