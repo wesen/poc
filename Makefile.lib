@@ -37,8 +37,8 @@ libfec.a: $(LIBFEC_OBJS)
 	ranlib $@
 
 libfec.so: $(LIBFEC_OBJS)
-	$(LD) -o $@ -shared $(LIBFEC_OBJS)
-#	$(CC) -dynamiclib -o $@ $(LIBFEC_OBJS)
+#	$(LD) -o $@ -shared $(LIBFEC_OBJS)
+	$(CC) -dynamiclib -o $@ $(LIBFEC_OBJS)
 
 include libfec-test.d
 libfec-test: libfec.a libfec-test.o

@@ -242,7 +242,7 @@ int pob_mainloop(int sock, int quiet) {
     if (!quiet) {
       static int count = 0;
       if ((count++ % 10) == 0) {
-        fprintf(stderr, "pkts: %.8u\tdrop: %.6u\tinc. group: %.6u\tbuf: %.6u len:%.6u\t\r",
+        fprintf(stderr, "pkts: %.8u\tdrop: %.6u\tincomplete: %.6u\tbuf: %.6u len:%.4u\t\r",
                 pob_stats.rcvd_pkts,
                 pob_stats.lost_pkts,
                 pob_stats.incomplete_groups,
