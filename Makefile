@@ -16,7 +16,7 @@ YACC=bison -b y
 #YACC=yacc
 #LIBS+=-ly
 
-all:  servers clients mp3cue
+all:  servers clients mp3cue mp3cut
 
 mp3cue-lex.yy.c: mp3cue.l
 	$(FLEX) -o$@ $<
@@ -33,6 +33,10 @@ mp3cue: mp3-read.o mp3-write.o mp3.o mp3cue-main.c bv.o mp3.h bv.h \
 	$(CC) $(CFLAGS) -o $@  mp3cue-main.c mp3-read.o mp3-write.o mp3.o \
 	 bv.o mp3cue-lex.yy.o mp3cue-y.tab.o aq.o file.o \
 	 dlist.o $(LDFLAGS) $(LIBS)
+
+mp3cut: mp3-read.o mp3-write.o mp3.o mp3cut.o bv.o mp3.h bv.h aq.o file.o dlist.o
+	$(CC) $(CFLAGS) -o $@  mp3-read.o mp3-write.o mp3.o mp3cut.o bv.o aq.o file.o dlist.o \
+        $(LDFLAGS) $(LIBS)
 
 aq.o: aq.c aq.h conf.h
 buf.o: buf.c buf.h conf.h

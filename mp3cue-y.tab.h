@@ -1,4 +1,4 @@
-/* A Bison parser, made by GNU Bison 1.875a.  */
+/* A Bison parser, made by GNU Bison 1.875b.  */
 
 /* Skeleton parser for Yacc-like parsing with Bison,
    Copyright (C) 1984, 1989, 1990, 2000, 2001, 2002, 2003 Free Software Foundation, Inc.
@@ -65,7 +65,7 @@ typedef union YYSTYPE {
   int number;
   char string[MP3CUE_MAX_STRING_LENGTH + 1];
 } YYSTYPE;
-/* Line 1240 of yacc.c.  */
+/* Line 1252 of yacc.c.  */
 #line 70 "mp3cue-y.tab.h"
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1
