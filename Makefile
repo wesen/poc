@@ -350,34 +350,34 @@ clean: tests-clean \
        mp3length-clean \
        dep-clean
 
-USER  ?= root
-GROUP ?= root
+USER  ?= $(GROUP)
+GROUP ?= $(GROUP)
 PREFIX:= /usr/local
 install: install-man
 	mkdir -p $(DESTDIR)/$(PREFIX)/bin
-	install -g root -o root -m 0755 mp3cue    $(DESTDIR)/$(PREFIX)/bin
-	install -g root -o root -m 0755 mp3cut    $(DESTDIR)/$(PREFIX)/bin
-	install -g root -o root -m 0755 mp3length $(DESTDIR)/$(PREFIX)/bin
-	install -g root -o root -m 0755 pob-2250  $(DESTDIR)/$(PREFIX)/bin
-	install -g root -o root -m 0755 pob-3119  $(DESTDIR)/$(PREFIX)/bin
-	install -g root -o root -m 0755 pob-fec   $(DESTDIR)/$(PREFIX)/bin
-	install -g root -o root -m 0755 poc-2250  $(DESTDIR)/$(PREFIX)/bin
-	install -g root -o root -m 0755 poc-3119  $(DESTDIR)/$(PREFIX)/bin
-	install -g root -o root -m 0755 poc-fec   $(DESTDIR)/$(PREFIX)/bin
-	install -g root -o root -m 0755 poc-http  $(DESTDIR)/$(PREFIX)/bin
-	install -g root -o root -m 0755 pogg-http $(DESTDIR)/$(PREFIX)/bin
+	install -g $(GROUP) -o $(USER) -m 0755 mp3cue    $(DESTDIR)/$(PREFIX)/bin
+	install -g $(GROUP) -o $(USER) -m 0755 mp3cut    $(DESTDIR)/$(PREFIX)/bin
+	install -g $(GROUP) -o $(USER) -m 0755 mp3length $(DESTDIR)/$(PREFIX)/bin
+	install -g $(GROUP) -o $(USER) -m 0755 pob-2250  $(DESTDIR)/$(PREFIX)/bin
+	install -g $(GROUP) -o $(USER) -m 0755 pob-3119  $(DESTDIR)/$(PREFIX)/bin
+	install -g $(GROUP) -o $(USER) -m 0755 pob-fec   $(DESTDIR)/$(PREFIX)/bin
+	install -g $(GROUP) -o $(USER) -m 0755 poc-2250  $(DESTDIR)/$(PREFIX)/bin
+	install -g $(GROUP) -o $(USER) -m 0755 poc-3119  $(DESTDIR)/$(PREFIX)/bin
+	install -g $(GROUP) -o $(USER) -m 0755 poc-fec   $(DESTDIR)/$(PREFIX)/bin
+	install -g $(GROUP) -o $(USER) -m 0755 poc-http  $(DESTDIR)/$(PREFIX)/bin
+	install -g $(GROUP) -o $(USER) -m 0755 pogg-http $(DESTDIR)/$(PREFIX)/bin
 
 install-man:
 	mkdir -p $(DESTDIR)/$(PREFIX)/share/man/man1
-	install -g root -o root -m 0644 man/man1/mp3cue.1    $(DESTDIR)/$(PREFIX)/share/man/man1
-	install -g root -o root -m 0644 man/man1/mp3cut.1    $(DESTDIR)/$(PREFIX)/share/man/man1
-	install -g root -o root -m 0644 man/man1/mp3length.1 $(DESTDIR)/$(PREFIX)/share/man/man1
-	install -g root -o root -m 0644 man/man1/pob-2250.1  $(DESTDIR)/$(PREFIX)/share/man/man1
-	install -g root -o root -m 0644 man/man1/pob-3119.1  $(DESTDIR)/$(PREFIX)/share/man/man1
-	install -g root -o root -m 0644 man/man1/pob-fec.1   $(DESTDIR)/$(PREFIX)/share/man/man1
-	install -g root -o root -m 0644 man/man1/poc-2250.1  $(DESTDIR)/$(PREFIX)/share/man/man1
-	install -g root -o root -m 0644 man/man1/poc-3119.1  $(DESTDIR)/$(PREFIX)/share/man/man1
-	install -g root -o root -m 0644 man/man1/poc-fec.1   $(DESTDIR)/$(PREFIX)/share/man/man1
-	install -g root -o root -m 0644 man/man1/poc-http.1  $(DESTDIR)/$(PREFIX)/share/man/man1
-	install -g root -o root -m 0644 man/man1/pogg-http.1 $(DESTDIR)/$(PREFIX)/share/man/man1
+	install -g $(GROUP) -o $(USER) -m 0644 man/man1/mp3cue.1    $(DESTDIR)/$(PREFIX)/share/man/man1
+	install -g $(GROUP) -o $(USER) -m 0644 man/man1/mp3cut.1    $(DESTDIR)/$(PREFIX)/share/man/man1
+	install -g $(GROUP) -o $(USER) -m 0644 man/man1/mp3length.1 $(DESTDIR)/$(PREFIX)/share/man/man1
+	install -g $(GROUP) -o $(USER) -m 0644 man/man1/pob-2250.1  $(DESTDIR)/$(PREFIX)/share/man/man1
+	install -g $(GROUP) -o $(USER) -m 0644 man/man1/pob-3119.1  $(DESTDIR)/$(PREFIX)/share/man/man1
+	install -g $(GROUP) -o $(USER) -m 0644 man/man1/pob-fec.1   $(DESTDIR)/$(PREFIX)/share/man/man1
+	install -g $(GROUP) -o $(USER) -m 0644 man/man1/poc-2250.1  $(DESTDIR)/$(PREFIX)/share/man/man1
+	install -g $(GROUP) -o $(USER) -m 0644 man/man1/poc-3119.1  $(DESTDIR)/$(PREFIX)/share/man/man1
+	install -g $(GROUP) -o $(USER) -m 0644 man/man1/poc-fec.1   $(DESTDIR)/$(PREFIX)/share/man/man1
+	install -g $(GROUP) -o $(USER) -m 0644 man/man1/poc-http.1  $(DESTDIR)/$(PREFIX)/share/man/man1
+	install -g $(GROUP) -o $(USER) -m 0644 man/man1/pogg-http.1 $(DESTDIR)/$(PREFIX)/share/man/man1
 

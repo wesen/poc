@@ -9,6 +9,7 @@
 #endif
 
 #include <assert.h>
+#include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -168,10 +169,12 @@ int poc_encoder(int sock, struct sockaddr_in *saddr, char *filename) {
             
             /* send rtp packet */
             if (fec_pkt_sendto(&pkt, sock, (struct sockaddr *)saddr, sizeof(*saddr)) < 0) {
-              perror("Error while sending packet");
-
-              retval = 0;
-              goto exit;
+              if (errno != ENOBUFS) {
+                perror("Error while sending packet");
+                
+                retval = 0;
+                goto exit;
+              }
             }
 #ifdef DEBUG_PLOSS
           }

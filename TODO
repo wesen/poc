@@ -102,6 +102,9 @@ X OGG Vorbis support
 BUG:
   - pob-fec: fec-group.c:113: fec_group_insert_pkt: Assertion
     `pkt->hdr.group_tstamp == group->tstamp' failed.
+  - pob-fec: fec-rb.c:147: fec_rb_insert_pkt: Assertion
+    `fec_rb[fec_rb_end].buf == ((void *)0)' failed.
+
 
   - id3tag support in poc-http (UDP socket?)
 
