@@ -9,11 +9,12 @@
 #include "aq.h"
 #include "file.h"
 #include "mp3.h"
+#include "id3.h"
 
 #define min(a, b) ((a) < (b) ? (a) : (b))
 
 static void usage(void) {
-  printf("Usage: mp3cut [-o outputfile] [-t [hh:]mm:ss[+ms]-[hh:]mm:ss[+ms]] mp3 [-t ...] mp3\n");
+  printf("Usage: mp3cut [-o outputfile] [-T title] [-A artist] [-N album-name] [-t [hh:]mm:ss[+ms]-[hh:]mm:ss[+ms]] mp3 [-t ...] mp3\n");
   printf("-o output: Output file, default mp3file.out.mp3\n");
 }
 
@@ -111,11 +112,23 @@ typedef struct mp3cut_s {
   unsigned long from, to;
 } mp3cut_t;
 
+typedef struct mp3cut_id3_s {
+  char artist[256];
+  char title[256];
+  char album[256];
+} mp3cut_id3_t;
+
 static unsigned int parse_arguments(mp3cut_t *mp3cuts, unsigned int max_cuts,
                                     char *outfilename, unsigned int max_outfilename,
+                                    mp3cut_id3_t *id3,
                                     int argc, char *argv[]) {
   int i;
   unsigned int mp3cuts_cnt = 0;
+
+  memset(id3->title, 0, sizeof(id3->title));
+  memset(id3->album, 0, sizeof(id3->album));
+  memset(id3->artist, 0, sizeof(id3->artist));
+
   for (i = 0; i < max_cuts; i++) {
     mp3cuts[i].from = mp3cuts[i].to = 0;
     memset(mp3cuts[i].filename, '\0', sizeof(mp3cuts[0].filename));
@@ -131,6 +144,26 @@ static unsigned int parse_arguments(mp3cut_t *mp3cuts, unsigned int max_cuts,
       } else {
         goto exit_usage;
       }
+    } else if (!strcmp(argv[i], "-T")) {
+      if (argc > (i+1)) {
+        strncpy(id3->title, argv[i+1], sizeof(id3->title));
+        id3->title[sizeof(id3->title) - 1] = '\0';
+      } else {
+        goto exit_usage;
+      }
+      i++;
+    } else if (!strcmp(argv[i], "-N")) {
+      if (argc > (i+1)) {
+        strncpy(id3->album, argv[i+1], sizeof(id3->album));
+        id3->album[sizeof(id3->album) - 1] = '\0';
+      }
+      i++;
+    } else if (!strcmp(argv[i], "-A")) {
+      if (argc > (i+1)) {
+        strncpy(id3->artist, argv[i+1], sizeof(id3->artist));
+        id3->artist[sizeof(id3->artist) - 1] = '\0';
+      }
+      i++;
     } else if (!strcmp(argv[i], "-t")) {
       if (argc > (i+1)) {
         unsigned char *fromstr, *tostr;
@@ -183,12 +216,13 @@ int main(int argc, char *argv[]) {
   char outfilename[256];
   mp3cut_t mp3cuts[256];
   unsigned int mp3cuts_cnt = 0;
+  mp3cut_id3_t id3;
 
   memset(outfilename, '\0', sizeof(outfilename));
 
   mp3cuts_cnt = parse_arguments(mp3cuts, 256,
                                 outfilename, sizeof(outfilename),
-                                argc, argv)  ;
+                                &id3, argc, argv);
   if (mp3cuts_cnt <= 0) {
     retval = EXIT_FAILURE;
     goto exit;
@@ -214,6 +248,13 @@ int main(int argc, char *argv[]) {
   file_t outfile;
   if (!file_open_write(&outfile, outfilename)) {
     fprintf(stderr, "Could not open mp3 file: %s\n", outfilename);
+    retval = EXIT_FAILURE;
+    goto exit;
+  }
+  if (!id3_write_tag(&outfile, id3.album, id3.artist, id3.title, 0,
+                     "Created by mp3cut (http://bl0rg.net/software/poc/)")) {
+    fprintf(stderr, "Could not write id3 tag to file: %s\n", outfilename);
+    file_close(&outfile);
     retval = EXIT_FAILURE;
     goto exit;
   }
