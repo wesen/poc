@@ -1,0 +1,1047 @@
+diff --minimal -N -u xmms-1.2.7/Input/mpg123/Makefile.am xmms-1.2.7-rtp/Input/mpg123/Makefile.am
+--- xmms-1.2.7/Input/mpg123/Makefile.am	Wed Sep 19 14:17:12 2001
++++ xmms-1.2.7-rtp/Input/mpg123/Makefile.am	Tue Mar 12 19:22:18 2002
+@@ -10,7 +10,7 @@
+ huffman.h mpg123.h l2tables.h getbits.h \
+ dxhead.c dxhead.h \
+ id3.c id3.h id3_frame.c id3_frame_content.c id3_frame_text.c \
+-id3_frame_url.c id3_header.h id3_tag.c
++id3_frame_url.c id3_header.h id3_tag.c rtp.c
+ 
+ 
+ if ARCH_X86
+diff --minimal -N -u xmms-1.2.7/Input/mpg123/common.c xmms-1.2.7-rtp/Input/mpg123/common.c
+--- xmms-1.2.7/Input/mpg123/common.c	Wed Feb 20 15:17:30 2002
++++ xmms-1.2.7-rtp/Input/mpg123/common.c	Tue Mar 12 20:30:50 2002
+@@ -66,7 +66,9 @@
+ 	{
+ 		if (fd)
+ 			ret = fread(buf + cnt, 1, count - cnt, fd);
+-		else
++		else if (mpg123_info->use_rtp) {
++			ret = mpg123_rtp_read(buf + cnt, count - cnt);
++                } else 
+ 			ret = mpg123_http_read(buf + cnt, count - cnt);
+ 		if (ret < 0)
+ 			return ret;
+@@ -281,7 +283,10 @@
+ /*    if (flags & READER_FD_OPENED) */
+ 	if (filept)
+ 		fclose(filept);
+-	else
++	else if (mpg123_info->use_rtp) {
++                mpg123_info->use_rtp = FALSE;
++                mpg123_rtp_close();
++        } else
+ 		mpg123_http_close();
+ }
+ 
+@@ -653,15 +658,19 @@
+ 
+ void mpg123_open_stream(char *bs_filenam, int fd)
+ {
++        mpg123_info->use_rtp = FALSE;
+ 	filept_opened = 1;
+ 	if (!strncasecmp(bs_filenam, "http://", 7))
+ 	{
+ 		filept = NULL;
+ 		mpg123_http_open(bs_filenam);
+ 		mpg123_info->filesize = 0;
+-	}
+-	else
+-	{
++	} else if (!strncasecmp(bs_filenam, "rtp://", 6)) {
++                filept = NULL;
++                mpg123_rtp_open(bs_filenam);
++                mpg123_info->use_rtp  = TRUE;
++                mpg123_info->filesize = 0;
++        } else {
+ 		if ((filept = fopen(bs_filenam, "rb")) != NULL)
+ 		{
+ 			if (stream_init() == -1)
+diff --minimal -N -u xmms-1.2.7/Input/mpg123/configure.c xmms-1.2.7-rtp/Input/mpg123/configure.c
+--- xmms-1.2.7/Input/mpg123/configure.c	Tue Mar 20 15:39:40 2001
++++ xmms-1.2.7-rtp/Input/mpg123/configure.c	Tue Mar 12 21:05:58 2002
+@@ -20,13 +20,16 @@
+    static GtkObject *decode_freq_custom_adj;
+  */
+ static GtkObject *streaming_size_adj, *streaming_pre_adj;
++static GtkObject *streaming_rtp_size_adj, *streaming_rtp_pre_adj;
+ static GtkWidget *streaming_proxy_use, *streaming_proxy_host_entry;
+ static GtkWidget *streaming_proxy_port_entry, *streaming_save_use, *streaming_save_entry;
++static GtkWidget *streaming_rtp_save_use, *streaming_rtp_save_entry;
+ static GtkWidget *streaming_proxy_auth_use;
+ static GtkWidget *streaming_proxy_auth_pass_entry, *streaming_proxy_auth_user_entry;
+ static GtkWidget *streaming_proxy_auth_user_label, *streaming_proxy_auth_pass_label;
+ static GtkWidget *streaming_cast_title, *streaming_udp_title;
+ static GtkWidget *streaming_proxy_hbox, *streaming_proxy_auth_hbox, *streaming_save_dirbrowser;
++static GtkWidget *streaming_rtp_save_dirbrowser, *streaming_rtp_save_hbox;
+ static GtkWidget *streaming_save_hbox, *title_id3_box, *title_tag_desc;
+ static GtkWidget *title_override, *title_id3_entry, *title_id3v2_disable;
+ 
+@@ -78,6 +81,8 @@
+ 	mpg123_cfg.http_buffer_size = (gint) GTK_ADJUSTMENT(streaming_size_adj)->value;
+ 	mpg123_cfg.http_prebuffer = (gint) GTK_ADJUSTMENT(streaming_pre_adj)->value;
+ 
++	mpg123_cfg.rtp_buffer_size = (gint) GTK_ADJUSTMENT(streaming_rtp_size_adj)->value;
++	mpg123_cfg.rtp_prebuffer = (gint) GTK_ADJUSTMENT(streaming_rtp_pre_adj)->value;
+ 	mpg123_cfg.use_proxy = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(streaming_proxy_use));
+ 	g_free(mpg123_cfg.proxy_host);
+ 	mpg123_cfg.proxy_host = g_strdup(gtk_entry_get_text(GTK_ENTRY(streaming_proxy_host_entry)));
+@@ -103,6 +108,13 @@
+ 		g_free(mpg123_cfg.save_http_path);
+ 	mpg123_cfg.save_http_path = g_strdup(gtk_entry_get_text(GTK_ENTRY(streaming_save_entry)));
+ 
++	mpg123_cfg.save_rtp_stream =
++           gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(streaming_rtp_save_use));
++	if (mpg123_cfg.save_rtp_path)
++		g_free(mpg123_cfg.save_rtp_path);
++	mpg123_cfg.save_rtp_path =
++           g_strdup(gtk_entry_get_text(GTK_ENTRY(streaming_rtp_save_entry)));
++
+ 	mpg123_cfg.cast_title_streaming = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(streaming_cast_title));
+ 	mpg123_cfg.use_udp_channel = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(streaming_udp_title));
+ 	
+@@ -121,6 +133,8 @@
+ /*      xmms_cfg_write_int(cfg,"MPG123","downsample_custom",mpg123_cfg.downsample_custom); */
+ 	xmms_cfg_write_int(cfg, "MPG123", "http_buffer_size", mpg123_cfg.http_buffer_size);
+ 	xmms_cfg_write_int(cfg, "MPG123", "http_prebuffer", mpg123_cfg.http_prebuffer);
++	xmms_cfg_write_int(cfg, "MPG123", "rtp_buffer_size", mpg123_cfg.rtp_buffer_size);
++	xmms_cfg_write_int(cfg, "MPG123", "rtp_prebuffer", mpg123_cfg.rtp_prebuffer);
+ 	xmms_cfg_write_boolean(cfg, "MPG123", "use_proxy", mpg123_cfg.use_proxy);
+ 	xmms_cfg_write_string(cfg, "MPG123", "proxy_host", mpg123_cfg.proxy_host);
+ 	xmms_cfg_write_int(cfg, "MPG123", "proxy_port", mpg123_cfg.proxy_port);
+@@ -135,6 +149,10 @@
+ 		xmms_cfg_remove_key(cfg, "MPG123", "proxy_pass");
+ 	xmms_cfg_write_boolean(cfg, "MPG123", "save_http_stream", mpg123_cfg.save_http_stream);
+ 	xmms_cfg_write_string(cfg, "MPG123", "save_http_path", mpg123_cfg.save_http_path);
++	xmms_cfg_write_boolean(cfg, "MPG123", "save_rtp_stream",
++              mpg123_cfg.save_rtp_stream);
++	xmms_cfg_write_string(cfg, "MPG123", "save_rtp_path",
++              mpg123_cfg.save_rtp_path);
+ 	xmms_cfg_write_boolean(cfg, "MPG123", "cast_title_streaming", mpg123_cfg.cast_title_streaming);
+ 	xmms_cfg_write_boolean(cfg, "MPG123", "use_udp_channel", mpg123_cfg.use_udp_channel);
+ 	xmms_cfg_write_boolean(cfg, "MPG123", "title_override", mpg123_cfg.title_override);
+@@ -224,6 +242,11 @@
+ 	gtk_entry_set_text(GTK_ENTRY(streaming_save_entry), dir);
+ }
+ 
++static void streaming_rtp_save_dirbrowser_cb(gchar * dir)
++{
++	gtk_entry_set_text(GTK_ENTRY(streaming_rtp_save_entry), dir);
++}
++
+ static void streaming_save_browse_cb(GtkWidget * w, gpointer data)
+ {
+ 	if (!streaming_save_dirbrowser)
+@@ -236,6 +259,21 @@
+ 	}
+ }
+ 
++static void streaming_rtp_save_browse_cb(GtkWidget * w, gpointer data)
++{
++	if (!streaming_rtp_save_dirbrowser)
++	{
++		streaming_rtp_save_dirbrowser =
++                   xmms_create_dir_browser(_("Select the directory where
++                            you want to store the RTP MPEG streams:"), mpg123_cfg.save_rtp_path, GTK_SELECTION_SINGLE, streaming_rtp_save_dirbrowser_cb);
++		gtk_signal_connect(GTK_OBJECT(streaming_rtp_save_dirbrowser),
++                      "destroy", GTK_SIGNAL_FUNC(gtk_widget_destroyed),
++                      &streaming_rtp_save_dirbrowser);
++		gtk_window_set_transient_for(GTK_WINDOW(streaming_rtp_save_dirbrowser), GTK_WINDOW(mpg123_configurewin));
++		gtk_widget_show(streaming_rtp_save_dirbrowser);
++	}
++}
++
+ static void streaming_save_use_cb(GtkWidget * w, gpointer data)
+ {
+ 	gboolean save_stream;
+@@ -245,6 +283,16 @@
+ 	gtk_widget_set_sensitive(streaming_save_hbox, save_stream);
+ }
+ 
++static void streaming_rtp_save_use_cb(GtkWidget * w, gpointer data)
++{
++	gboolean save_stream;
++
++	save_stream =
++           gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(streaming_rtp_save_use));
++
++	gtk_widget_set_sensitive(streaming_rtp_save_hbox, save_stream);
++}
++
+ static void title_override_cb(GtkWidget * w, gpointer data)
+ {
+ 	gboolean override;
+@@ -264,9 +312,13 @@
+ 	GtkWidget *streaming_vbox;
+ 	GtkWidget *streaming_buf_frame, *streaming_buf_hbox;
+ 	GtkWidget *streaming_size_box, *streaming_size_label, *streaming_size_spin;
++	GtkWidget *streaming_rtp_size_label, *streaming_rtp_size_spin;
+ 	GtkWidget *streaming_pre_box, *streaming_pre_label, *streaming_pre_spin;
++	GtkWidget *streaming_rtp_pre_label, *streaming_rtp_pre_spin;
+ 	GtkWidget *streaming_proxy_frame, *streaming_proxy_vbox;
+ 	GtkWidget *streaming_proxy_port_label, 	*streaming_proxy_host_label;
++	GtkWidget *streaming_rtp_save_frame, *streaming_rtp_save_vbox;
++	GtkWidget *streaming_rtp_save_label, *streaming_rtp_save_browse;
+ 	GtkWidget *streaming_save_frame, *streaming_save_vbox;
+ 	GtkWidget *streaming_save_label, *streaming_save_browse;
+ 	GtkWidget *streaming_cast_frame, *streaming_cast_vbox;
+@@ -469,6 +521,15 @@
+ 	gtk_widget_set_usize(streaming_size_spin, 60, -1);
+ 	gtk_box_pack_start(GTK_BOX(streaming_size_box), streaming_size_spin, FALSE, FALSE, 0);
+ 
++/* RTP */
++	streaming_rtp_size_label = gtk_label_new(_("RTP buffer size (kb):"));
++	gtk_box_pack_start(GTK_BOX(streaming_size_box), streaming_rtp_size_label, FALSE, FALSE, 0);
++	streaming_rtp_size_adj = gtk_adjustment_new(mpg123_cfg.rtp_buffer_size, 4, 4096, 4, 4, 4);
++	streaming_rtp_size_spin =
++           gtk_spin_button_new(GTK_ADJUSTMENT(streaming_rtp_size_adj), 8, 0);
++	gtk_widget_set_usize(streaming_rtp_size_spin, 60, -1);
++	gtk_box_pack_start(GTK_BOX(streaming_size_box), streaming_rtp_size_spin, FALSE, FALSE, 0);
++
+ 	streaming_pre_box = gtk_hbox_new(FALSE, 5);
+ 	/*gtk_table_attach_defaults(GTK_TABLE(streaming_buf_table),streaming_pre_box,1,2,0,1); */
+ 	gtk_box_pack_start(GTK_BOX(streaming_buf_hbox), streaming_pre_box, TRUE, TRUE, 0);
+@@ -479,6 +540,15 @@
+ 	gtk_widget_set_usize(streaming_pre_spin, 60, -1);
+ 	gtk_box_pack_start(GTK_BOX(streaming_pre_box), streaming_pre_spin, FALSE, FALSE, 0);
+ 
++        /* RTP */
++	streaming_rtp_pre_label = gtk_label_new(_("RTP pre-buffer (percent):"));
++	gtk_box_pack_start(GTK_BOX(streaming_pre_box), streaming_rtp_pre_label, FALSE, FALSE, 0);
++	streaming_rtp_pre_adj = gtk_adjustment_new(mpg123_cfg.rtp_prebuffer, 0, 90, 1, 1, 1);
++	streaming_rtp_pre_spin =
++           gtk_spin_button_new(GTK_ADJUSTMENT(streaming_rtp_pre_adj), 1, 0);
++	gtk_widget_set_usize(streaming_rtp_pre_spin, 60, -1);
++	gtk_box_pack_start(GTK_BOX(streaming_pre_box), streaming_rtp_pre_spin, FALSE, FALSE, 0);
++
+  	/*
+  	 * Proxy config.
+  	 */
+@@ -574,6 +644,45 @@
+ 	streaming_save_browse = gtk_button_new_with_label(_("Browse"));
+ 	gtk_signal_connect(GTK_OBJECT(streaming_save_browse), "clicked", GTK_SIGNAL_FUNC(streaming_save_browse_cb), NULL);
+ 	gtk_box_pack_start(GTK_BOX(streaming_save_hbox), streaming_save_browse, FALSE, FALSE, 0);
++
++/* RTP */
++	streaming_rtp_save_frame = gtk_frame_new(_("Save RTP stream to disk:"));
++	gtk_container_set_border_width(GTK_CONTAINER(streaming_rtp_save_frame), 5);
++	gtk_box_pack_start(GTK_BOX(streaming_vbox), streaming_rtp_save_frame, FALSE, FALSE, 0);
++
++	streaming_rtp_save_vbox = gtk_vbox_new(FALSE, 5);
++	gtk_container_set_border_width(GTK_CONTAINER(streaming_rtp_save_vbox), 5);
++	gtk_container_add(GTK_CONTAINER(streaming_rtp_save_frame),
++              streaming_rtp_save_vbox);
++	streaming_rtp_save_use = gtk_check_button_new_with_label(_("Save RTP stream to disk"));
++	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(streaming_rtp_save_use),
++              mpg123_cfg.save_rtp_stream);
++	gtk_signal_connect(GTK_OBJECT(streaming_rtp_save_use),
++              "clicked", GTK_SIGNAL_FUNC(streaming_rtp_save_use_cb), NULL);
++	gtk_box_pack_start(GTK_BOX(streaming_rtp_save_vbox),
++              streaming_rtp_save_use, FALSE, FALSE, 0);
++
++	streaming_rtp_save_hbox = gtk_hbox_new(FALSE, 5);
++	gtk_widget_set_sensitive(streaming_rtp_save_hbox,
++              mpg123_cfg.save_rtp_stream);
++	gtk_box_pack_start(GTK_BOX(streaming_rtp_save_vbox),
++              streaming_rtp_save_hbox, FALSE, FALSE, 0);
++
++	streaming_rtp_save_label = gtk_label_new(_("Path:"));
++	gtk_box_pack_start(GTK_BOX(streaming_rtp_save_hbox),
++              streaming_rtp_save_label, FALSE, FALSE, 0);
++
++	streaming_rtp_save_entry = gtk_entry_new();
++	gtk_entry_set_text(GTK_ENTRY(streaming_rtp_save_entry),
++              mpg123_cfg.save_rtp_path);
++	gtk_box_pack_start(GTK_BOX(streaming_rtp_save_hbox),
++              streaming_rtp_save_entry, TRUE, TRUE, 0);
++
++	streaming_rtp_save_browse = gtk_button_new_with_label(_("Browse"));
++	gtk_signal_connect(GTK_OBJECT(streaming_rtp_save_browse),
++              "clicked", GTK_SIGNAL_FUNC(streaming_rtp_save_browse_cb), NULL);
++	gtk_box_pack_start(GTK_BOX(streaming_rtp_save_hbox),
++              streaming_rtp_save_browse, FALSE, FALSE, 0);
+ 
+ 	streaming_cast_frame = gtk_frame_new(_("SHOUT/Icecast:"));
+ 	gtk_container_set_border_width(GTK_CONTAINER(streaming_cast_frame), 5);
+diff --minimal -N -u xmms-1.2.7/Input/mpg123/fileinfo.c xmms-1.2.7-rtp/Input/mpg123/fileinfo.c
+--- xmms-1.2.7/Input/mpg123/fileinfo.c	Wed Feb 20 15:17:30 2002
++++ xmms-1.2.7-rtp/Input/mpg123/fileinfo.c	Tue Mar 12 19:35:37 2002
+@@ -82,7 +82,8 @@
+ 	gint fd;
+ 	struct id3v1tag_t tag;
+ 
+-	if (!strncasecmp(current_filename, "http://", 7))
++	if (!strncasecmp(current_filename, "http://", 7) ||
++            !strncasecmp(current_filename, "rtp://", 6))
+ 		return;
+ 
+ 	if ((fd = open(current_filename, O_RDWR)) != -1)
+@@ -142,7 +143,8 @@
+ 	gint fd, len;
+ 	struct id3v1tag_t tag;
+ 
+-	if (!strncasecmp(current_filename, "http://", 7))
++	if (!strncasecmp(current_filename, "http://", 7) ||
++            !strncasecmp(current_filename, "rtp://", 6))
+ 		return;
+ 
+ 	if ((fd = open(current_filename, O_RDWR)) != -1)
+@@ -402,7 +404,9 @@
+ 	{
+ 		file_info_http(filename);
+ 		return;
+-	}
++	} else if (!strncasecmp(filename, "rtp://", 6)) {
++                return;
++        }
+ 
+ 	gtk_widget_set_sensitive(id3_frame, TRUE);
+ 
+diff --minimal -N -u xmms-1.2.7/Input/mpg123/mpg123.c xmms-1.2.7-rtp/Input/mpg123/mpg123.c
+--- xmms-1.2.7/Input/mpg123/mpg123.c	Wed Feb 20 15:17:31 2002
++++ xmms-1.2.7-rtp/Input/mpg123/mpg123.c	Tue Mar 12 21:04:58 2002
+@@ -171,6 +171,8 @@
+ 	mpg123_cfg.channels = 2;
+ 	mpg123_cfg.downsample = 0;
+ 	mpg123_cfg.downsample_custom = 44100;
++	mpg123_cfg.rtp_buffer_size = 128;
++	mpg123_cfg.rtp_prebuffer = 25;
+ 	mpg123_cfg.http_buffer_size = 128;
+ 	mpg123_cfg.http_prebuffer = 25;
+ 	mpg123_cfg.proxy_port = 8080;
+@@ -192,9 +194,17 @@
+ 	/*xmms_cfg_read_int(cfg,"MPG123","downsample_custom",&mpg123_cfg.downsample_custom); */
+ 	xmms_cfg_read_int(cfg, "MPG123", "http_buffer_size", &mpg123_cfg.http_buffer_size);
+ 	xmms_cfg_read_int(cfg, "MPG123", "http_prebuffer", &mpg123_cfg.http_prebuffer);
++	xmms_cfg_read_int(cfg, "MPG123", "rtp_buffer_size",
++              &mpg123_cfg.rtp_buffer_size);
++	xmms_cfg_read_int(cfg, "MPG123", "rtp_prebuffer", &mpg123_cfg.rtp_prebuffer);
+ 	xmms_cfg_read_boolean(cfg, "MPG123", "save_http_stream", &mpg123_cfg.save_http_stream);
+ 	if (!xmms_cfg_read_string(cfg, "MPG123", "save_http_path", &mpg123_cfg.save_http_path))
+ 		mpg123_cfg.save_http_path = g_strdup(g_get_home_dir());
++	xmms_cfg_read_boolean(cfg, "MPG123", "save_rtp_stream",
++              &mpg123_cfg.save_rtp_stream);
++	if (!xmms_cfg_read_string(cfg, "MPG123", "save_rtp_path",
++                 &mpg123_cfg.save_rtp_path))
++		mpg123_cfg.save_rtp_path = g_strdup(g_get_home_dir());
+ 	xmms_cfg_read_boolean(cfg, "MPG123", "cast_title_streaming", &mpg123_cfg.cast_title_streaming);
+ 	xmms_cfg_read_boolean(cfg, "MPG123", "use_udp_channel", &mpg123_cfg.use_udp_channel);
+ 
+@@ -408,7 +418,11 @@
+ 				return FALSE;
+ 		}
+ 		return TRUE;
+-	}
++	} else if (!strncasecmp(filename, "rtp://", 6)) {
++           /* we assume all rtp streams to be mpeg */
++           return TRUE;
++        }
++
+ 	if(mpg123_cfg.detect_by_content)
+ 		return (mpg123_detect_by_content(filename));
+ 	ext = strrchr(filename, '.');
+@@ -763,7 +777,7 @@
+ 	/*
+ 	 * TODO: Getting song info from http streams.
+ 	 */
+-	if (strncasecmp(filename, "http://", 7))
++	if (strncasecmp(filename, "http://", 7) && strncasecmp(filename, "rtp://", 6))
+ 	{
+ 		if ((file = fopen(filename, "rb")) != NULL)
+ 		{
+@@ -823,7 +837,8 @@
+ 		mpg123_init_layer3(fr.down_sample_sblimit);
+ 
+ 		mpg123_info->tpf = mpg123_compute_tpf(&fr);
+-		if (strncasecmp(filename, "http://", 7))
++		if (strncasecmp(filename, "http://", 7) &&
++                      strncasecmp(filename, "rtp://", 6))
+ 		{
+ 			if (mpg123_stream_check_for_xing_header(&fr, &xing_header))
+ 			{
+@@ -848,7 +863,8 @@
+ 			else
+ 				break;
+ 		}
+-		if(!have_xing_header && strncasecmp(filename, "http://", 7))
++		if(!have_xing_header && strncasecmp(filename, "http://",
++                         7) && strncasecmp(filename, "rtp://", 6))
+ 		{
+ 			mpg123_info->num_frames = mpg123_calc_numframes(&fr);
+ 		}
+@@ -862,17 +878,17 @@
+ 		mpg123_mpeg25 = fr.mpeg25;
+ 		mpg123_mode = fr.mode;
+ 
+-		if (strncasecmp(filename, "http://", 7))
+-		{
+-			mpg123_length = mpg123_info->num_frames * mpg123_info->tpf * 1000;
+-			if (!mpg123_title)
+-				mpg123_title = get_song_title(NULL,filename);
+-		}
+-		else
++		if (!strncasecmp(filename, "http://", 7))
+ 		{
+ 			if (!mpg123_title)
+ 				mpg123_title = mpg123_http_get_title(filename);
+ 			mpg123_length = -1;
++		} else if(!strncasecmp(filename, "rtp://", 6)) {
++                        ;
++                } else {
++			mpg123_length = mpg123_info->num_frames * mpg123_info->tpf * 1000;
++			if (!mpg123_title)
++				mpg123_title = get_song_title(NULL,filename);
+ 		}
+ 		mpg123_ip.set_info(mpg123_title, mpg123_length, mpg123_bitrate * 1000, mpg123_freqs[fr.sampling_frequency], fr.stereo);
+ 		output_opened = TRUE;
+@@ -981,7 +997,8 @@
+ 					if (mpg123_bitrate != disp_bitrate)
+ 					{
+ 						disp_bitrate = mpg123_bitrate;
+-						if(!have_xing_header && strncasecmp(filename,"http://",7))
++						if(!have_xing_header && strncasecmp(filename,"http://",7)
++                                                      && strncasecmp(filename, "rtp://", 6))
+ 						{
+ 							double rel = mpg123_relative_pos();
+ 							if (rel)
+@@ -1040,6 +1057,7 @@
+ 	mpg123_info->first_frame = TRUE;
+ 	mpg123_info->output_audio = TRUE;
+ 	mpg123_info->jump_to_time = -1;
++        mpg123_info->use_rtp = FALSE;
+ 	skip_frames = 0;
+ 	audio_error = FALSE;
+ 	output_opened = FALSE;
+diff --minimal -N -u xmms-1.2.7/Input/mpg123/mpg123.h xmms-1.2.7-rtp/Input/mpg123/mpg123.h
+--- xmms-1.2.7/Input/mpg123/mpg123.h	Wed Feb 20 15:17:31 2002
++++ xmms-1.2.7-rtp/Input/mpg123/mpg123.h	Tue Mar 12 20:33:42 2002
+@@ -76,6 +76,7 @@
+ 	gfloat eq_mul[576];
+ 	gboolean output_audio;
+ 	gboolean first_frame;
++        gboolean use_rtp;
+ 	guint32 filesize;	/* Filesize without junk */
+ }
+ PlayerInfo;
+@@ -134,11 +135,15 @@
+ 	gint downsample_custom;
+ 	gint http_buffer_size;
+ 	gint http_prebuffer;
++	gint rtp_buffer_size;
++	gint rtp_prebuffer;
+ 	gboolean use_proxy;
+ 	gchar *proxy_host;
+ 	gint proxy_port;
+ 	gboolean proxy_use_auth;
+ 	gchar *proxy_user, *proxy_pass;
++	gboolean save_rtp_stream;
++	gchar *save_rtp_path;
+ 	gboolean save_http_stream;
+ 	gchar *save_http_path;
+ 	gboolean cast_title_streaming;
+@@ -167,6 +172,12 @@
+ void mpg123_http_close(void);
+ gchar *mpg123_http_get_title(gchar * url);
+ gint mpg123_http_get_icy_br(void);
++
++/* ------ Declarations from "rtp.c" ------ */
++
++extern int mpg123_rtp_open(char *url);
++int mpg123_rtp_read(gpointer data, gint length);
++void mpg123_rtp_close(void);
+ 
+ /* ------ Declarations from "common.c" ------ */
+ extern unsigned int mpg123_get1bit(void);
+diff --minimal -N -u xmms-1.2.7/Input/mpg123/rtp.c xmms-1.2.7-rtp/Input/mpg123/rtp.c
+--- xmms-1.2.7/Input/mpg123/rtp.c	Thu Jan  1 01:00:00 1970
++++ xmms-1.2.7-rtp/Input/mpg123/rtp.c	Wed Mar 13 17:18:31 2002
+@@ -0,0 +1,487 @@
++/*  XMMS - Cross-platform multimedia player
++ *  Copyright (C) 1998-2000  Peter Alm, Mikael Alm, Olle Hallnas, Thomas Nilsson and 4Front Technologies
++ *
++ *  This program is free software; you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation; either version 2 of the License, or
++ *  (at your option) any later version.
++ *
++ *  This program is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with this program; if not, write to the Free Software
++ *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
++ */
++#include <sys/types.h>
++#include <sys/socket.h>
++#include <sys/time.h>
++#include <netinet/in.h>
++#include <arpa/inet.h>
++#include <netdb.h>
++#include <glib.h>
++#include <string.h>
++#include <fcntl.h>
++#include <unistd.h>
++#include <errno.h>
++#include <stdio.h>
++
++#include <pthread.h>
++
++#include "mpg123.h"
++#include "libxmms/util.h"
++#include "rtp.h"
++
++#define min(x,y) ((x)<(y)?(x):(y))
++#define min3(x,y,z) (min(x,y)<(z)?min(x,y):(z))
++#define min4(x,y,z,w) (min3(x,y,z)<(w)?min3(x,y,z):(w))
++
++extern gint mpg123_bitrate, mpg123_frequency, mpg123_stereo;
++extern gboolean mpg123_stereo;
++
++static gboolean prebuffering, going, eof = FALSE;
++static gint sock, rd_index, wr_index, buffer_length, prebuffer_length;
++static guint64 buffer_read = 0;
++static gchar *buffer;
++static pthread_t thread;
++static GtkWidget *error_dialog = NULL;
++
++static FILE *output_file = NULL;
++
++/**
++ * unpack a big endian 16bit integer
++ *
++ * @warning this could not be done in one step
++ * @warning pointer to buffer gets modified
++ * @param ptr pointer to pointer to buffer
++ * @return unpacked integer
++ */
++unsigned int uint16_unpack__(unsigned char **ptr) {
++   int     i = (*((*ptr)++) & 0xFF) << 8;
++   return (i |= *((*ptr)++) & 0xFF);
++}
++
++/**
++ * unpack a big endian 32bit integer
++ *
++ * @warning this could not be done in one step
++ * @warning pointer to buffer gets modified
++ * @param ptr pointer to pointer to buffer
++ * @return unpacked integer
++ */
++unsigned int uint32_unpack__(unsigned char **ptr) {
++   int     i =  (*((*ptr)++) & 0xFF) << 24;
++           i |= (*((*ptr)++) & 0xFF) << 16;
++           i |= (*((*ptr)++) & 0xFF) << 8;
++   return (i |=  *((*ptr)++) & 0xFF);
++}
++
++int rtp_read_pkt(rtp_hdr_t *pkt, int fd) {
++   unsigned char buf[RTP_PKT_SIZE], *ptr;
++   int len, hdr_size;
++
++   switch (len = read(fd, buf, RTP_PKT_SIZE)) {
++      case 0:
++         /* fprintf(stderr, "End of file\n"); */
++         return 0;
++
++      case -1:
++         /* perror("read"); */
++         return 0;
++
++      default:
++         break;
++   }
++
++   if (len > RTP_PKT_SIZE) {
++      /* fprintf(stderr, "Received too long packet\n"); */
++      return 0;
++   }
++
++   if (len < RTP_HDR_SIZE) {
++      /* fprintf(stderr, "Packet too small\n"); */
++      return 0;
++   }
++
++   /* v:2, p:1, x:1, cc:4 */
++   pkt->b.v  = (buf[0] >> 6) & 0x3;
++   pkt->b.p  = (buf[0] >> 5) & 0x1;
++   pkt->b.x  = (buf[0] >> 4) & 0x1;
++   pkt->b.cc = (buf[0])      & 0xf;
++   /* m:1, pt:7 */
++   pkt->b.m  = (buf[1] >> 7) & 0x1;
++   pkt->b.pt = (buf[1])      & 0x7f;
++
++   ptr = buf + 2;
++   /* seq:16 */
++   pkt->b.seq = UINT16_UNPACK(ptr);
++   /* timestamp:32 */
++   pkt->timestamp = UINT32_UNPACK(ptr);
++   /* ssrc:32 */
++   ptr += 4;
++   /* mpeg:32 */
++   ptr += 4;
++
++   hdr_size = RTP_HDR_SIZE + RTP_MPEG_HDR_SIZE + pkt->b.cc * RTP_CSRC_SIZE;
++   pkt->length = len - hdr_size;
++   ptr = buf + hdr_size;
++   memcpy(pkt->data, ptr, pkt->length);
++
++   return 1;
++}
++/** open a multicast socket */
++static int mcast_socket(struct sockaddr_in *saddr, 
++                        unsigned short port, unsigned char ttl) {
++   struct sockaddr_in addr;
++   int                msock, on = 1;
++   unsigned char      loop = 1;
++
++   if ((msock = socket(PF_INET, SOCK_DGRAM, 0)) < 0) {
++      perror("socket");
++      return -1;
++   }
++
++   saddr->sin_family     = AF_INET;
++   saddr->sin_port       = htons(port);
++
++   addr.sin_family       = AF_INET;
++   addr.sin_addr.s_addr  = htons(INADDR_ANY);
++   addr.sin_port         = htons(0);
++
++   if (setsockopt(msock, SOL_SOCKET, SO_REUSEADDR, 
++                  &on, sizeof(on)) < 0) {
++      perror("setsockopt");
++      goto error;
++   }
++   
++   if (!IN_MULTICAST(htonl(saddr->sin_addr.s_addr))) {
++      /* fprintf(stderr, "Warning: %s is not a multicast address\n",
++            inet_ntoa(saddr->sin_addr)); */
++   } else {
++      if ((setsockopt(msock, IPPROTO_IP,
++                             IP_MULTICAST_TTL,
++                             &ttl, sizeof(ttl)) < 0) ||
++          (setsockopt(msock, IPPROTO_IP,
++                             IP_MULTICAST_LOOP, 
++                             &loop, sizeof(loop)) < 0)) {
++         perror("setsockopt");
++         goto error;
++      }
++   }
++
++   return msock;
++
++error:
++   if (close(msock) < 0)
++      perror("close");
++   return -1;
++}
++
++/**
++ * open a receiving socket
++ *
++ * @param hostname multicast address to bind to 
++ * @param port port to send on
++ * @return -1 on error, file descriptor on success
++ */
++int mcast_recv_socket(char *hostname, unsigned short port) {
++   struct sockaddr_in addr;
++   struct ip_mreq     mreq;
++   struct hostent     *mcast;
++   int                msock;
++
++   if (NULL == (mcast = gethostbyname(hostname))) {
++      perror("gethostbyname");
++      return -1;
++   }
++
++   memcpy(&addr.sin_addr, mcast->h_addr_list[0], mcast->h_length);
++
++   if ((msock = mcast_socket(&addr, port, 1)) < 0)
++      return -1;
++
++   if (bind(msock, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
++      perror("bind");
++      goto error;
++   }
++
++   if (IN_MULTICAST(htonl(addr.sin_addr.s_addr))) {
++      mreq.imr_multiaddr.s_addr = addr.sin_addr.s_addr;
++      mreq.imr_interface.s_addr = htonl(INADDR_ANY);
++      
++      if (setsockopt(msock, IPPROTO_IP,
++               IP_ADD_MEMBERSHIP,
++               &mreq, sizeof(mreq)) < 0) {
++         perror("setsockopt");
++         goto error;
++      }
++   }
++
++   return msock;
++   
++error:
++   if (close(msock) < 0)
++      perror("close");
++   return -1;
++}
++
++static void parse_url(const gchar * url, gchar ** host, int *port) {
++   gchar *h, *pt, *f, *temp, *ptr;
++   
++   temp = g_strdup(url);
++   ptr = temp;
++
++   if (!strncasecmp("rtp://", ptr, 6))
++      ptr += 6;
++   f = strchr(ptr, '/');
++   h = ptr;
++   pt = strchr(ptr, ':');
++   if (pt != NULL && (f == NULL || pt < f))
++   {
++      *pt = '\0';
++      *port = atoi(pt + 1);
++   }
++   else
++   {
++      if (f)
++         *f = '\0';
++      *port = 1500;
++   }
++   *host = g_strdup(h);
++   
++   g_free(temp);
++}
++
++void mpg123_rtp_close(void)
++{
++   going = FALSE;
++   
++   pthread_join(thread, NULL);
++}
++
++
++static gint rtp_used(void)
++{
++   if (wr_index >= rd_index)
++      return wr_index - rd_index;
++   return buffer_length - (rd_index - wr_index);
++}
++
++static gint rtp_free(void)
++{
++   if (rd_index > wr_index)
++      return (rd_index - wr_index) - 1;
++   return (buffer_length - (wr_index - rd_index)) - 1;
++}
++
++static void rtp_wait_for_data(gint bytes)
++{
++   while ((prebuffering || (rtp_used() < bytes)) && 
++          !eof && going && mpg123_info->going) {
++      xmms_usleep(10000);
++   }
++}
++
++static void show_error_message(gchar *error)
++{
++   if(!error_dialog)
++   {
++      GDK_THREADS_ENTER();
++      error_dialog = xmms_show_message(_("Error"), error, _("Ok"), FALSE,
++            NULL, NULL);
++      gtk_signal_connect(GTK_OBJECT(error_dialog),
++            "destroy",
++            GTK_SIGNAL_FUNC(gtk_widget_destroyed),
++            &error_dialog);
++      GDK_THREADS_LEAVE();
++   }
++}
++
++int mpg123_rtp_read(gpointer data, gint length)
++{
++   gint len, cnt, off = 0;
++   
++   rtp_wait_for_data(length);
++   
++   if (!going && !mpg123_info->going)
++      return 0;
++   len = min(rtp_used(), length);
++
++   while (len && rtp_used())
++   {
++      cnt = min3(len, buffer_length - rd_index, rtp_used());
++      if (output_file) {
++         fwrite(buffer + rd_index, 1, cnt, output_file);
++      }
++      
++      memcpy((gchar *)data + off, buffer + rd_index, cnt);
++      rd_index = (rd_index + cnt) % buffer_length;
++      buffer_read += cnt;
++      len -= cnt;
++      off += cnt;
++   }
++   return off;
++}
++
++static gboolean rtp_check_for_data(void)
++{
++
++   fd_set set;
++   struct timeval tv;
++   gint ret;
++   
++   tv.tv_sec = 0;
++   tv.tv_usec = 20000;
++   FD_ZERO(&set);
++   FD_SET(sock, &set);
++   ret = select(sock + 1, &set, NULL, NULL, &tv);
++   if (ret > 0)
++      return TRUE;
++   return FALSE;
++}
++
++static void *rtp_buffer_loop(void *arg)
++{
++   gchar *host, *status, *url, *temp;
++   gint cnt, port;
++   url = (gchar *) arg;
++   
++   g_strstrip(url);
++  
++   parse_url(url, &host, &port);
++   
++   temp = g_strdup(url);
++   g_free(url);
++   url = temp;
++   
++   /* open multicast socket */
++   if ((sock = mcast_recv_socket(host, port)) < 0) {
++      status = g_strdup_printf("Could not open host %s", host);
++      show_error_message(status);
++      g_free(status);
++      
++      mpg123_ip.set_info_text(NULL);
++      eof = TRUE;
++   }
++   
++   /* save to file */
++   if (mpg123_cfg.save_rtp_stream) {
++      gchar *output_name;
++      
++      output_name = url;
++      if (!strncasecmp(output_name, "rtp://", 6))
++         output_name += 6;
++      if (output_name[strlen(output_name)-1] == '/')
++         output_name[strlen(output_name)-1] = '\0';
++      output_name = g_strdup_printf("%s/%s.mp3", 
++            mpg123_cfg.save_rtp_path, output_name);
++      
++      output_file = fopen(output_name, "wb");
++      g_free(output_name);
++   }
++   
++   while (going) {
++      if (!rtp_used() && !mpg123_ip.output->buffer_playing()) 
++         prebuffering = TRUE;
++
++      if ((rtp_free() > 0) && !eof) {
++         if (rtp_check_for_data()) {
++            rtp_hdr_t pkt;
++            
++            if (!rtp_read_pkt(&pkt, sock)) {
++               eof = TRUE;
++               if (prebuffering)
++               {
++                  prebuffering = FALSE;
++                  mpg123_ip.set_info_text(NULL);
++               }
++               
++            }
++            else {
++               if (pkt.length >= buffer_length) {
++                  eof = TRUE;
++                  if (prebuffering) {
++                     prebuffering = FALSE;
++                     mpg123_ip.set_info_text(NULL);
++                  }
++
++                  status = g_strdup_printf("packet is bigger than buffer");
++                  show_error_message(status);
++                  g_free(status);
++
++               } else {
++                  cnt = min3(rtp_free(), buffer_length - wr_index, pkt.length);
++                  
++                  memcpy(buffer + wr_index, pkt.data, cnt); 
++                  wr_index = (wr_index + cnt) % buffer_length;
++
++                  if (cnt < pkt.length) {
++                     memcpy(buffer + wr_index, pkt.data + cnt, pkt.length - cnt); 
++                     wr_index = (wr_index + pkt.length - cnt) % buffer_length;
++                  }
++                  
++               }
++            }
++         }
++            
++            
++         if (prebuffering)
++         {
++            if (rtp_used() > prebuffer_length)
++            {
++               prebuffering = FALSE;
++               mpg123_ip.set_info_text(NULL);
++            }
++            else
++            {
++               status =
++                  g_strdup_printf(_("PRE-BUFFERING: %dKB/%dKB"), 
++                        rtp_used() / 1024, prebuffer_length / 1024);
++               mpg123_ip.set_info_text(status);
++               g_free(status);
++            }
++            
++         }
++         
++      }
++      else
++         xmms_usleep(10000);
++      
++   }
++   if (output_file)
++   {
++      fclose(output_file);
++      output_file = NULL;
++   }
++   close(sock);
++   
++   g_free(host);
++   g_free(buffer);
++   g_free(url);
++   
++   pthread_exit(NULL);
++}
++
++int mpg123_rtp_open(gchar * _url)
++{
++	gchar *url;
++
++	url = g_strdup(_url);
++
++	rd_index = 0;
++	wr_index = 0;
++	buffer_length = mpg123_cfg.rtp_buffer_size * 1024;
++	prebuffer_length = (buffer_length * mpg123_cfg.rtp_prebuffer) / 100;
++	buffer_read = 0;
++	prebuffering = TRUE;
++	going = TRUE;
++	eof = FALSE;
++	buffer = g_malloc(buffer_length);
++
++	pthread_create(&thread, NULL, rtp_buffer_loop, url);
++
++	return 0;
++}
++
+diff --minimal -N -u xmms-1.2.7/Input/mpg123/rtp.h xmms-1.2.7-rtp/Input/mpg123/rtp.h
+--- xmms-1.2.7/Input/mpg123/rtp.h	Thu Jan  1 01:00:00 1970
++++ xmms-1.2.7-rtp/Input/mpg123/rtp.h	Tue Mar 12 21:18:14 2002
+@@ -0,0 +1,96 @@
++
++/**
++ * First 32 bits of RTP packet header
++ */
++struct rtp_bits {
++   unsigned int v  :2;  /**< version */
++   unsigned int p  :1;  /**< padding */
++   unsigned int x  :1;  /**< number of extension headers */
++   unsigned int cc :4;  /**< number of CSRC identifiers */
++   unsigned int m  :1;  /**< marker */
++   unsigned int pt :7;  /**< payload type */
++   unsigned int seq:16; /**< sequence number */
++};
++
++/** default RTP packet size */
++#define RTP_PKT_SIZE 1500
++
++/**
++ * RTP header structure
++ *
++ *  0                   1                   2                   3
++ *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
++ * |V=2|P|X|  CC   |M|     PT      |       sequence number         | 
++ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
++ * |                           timestamp                           |
++ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
++ * |           synchronization source (SSRC) identifier            |
++ * +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
++ * |            contributing source (CSRC) identifiers             |
++ * |                             ....                              |
++ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
++ *
++ */
++typedef struct rtp_hdr_s {
++   struct rtp_bits  b;            /**< flags and misc. bits */
++   unsigned long    timestamp;    /**< timestamp */
++   unsigned long    ssrc;         /**< synchronization source */
++   unsigned long    mpeg;         /**< MPEG information (RFC2250) */
++   int              length;       /**< payload data length */
++   /** payload data */
++   unsigned char    data[RTP_PKT_SIZE];
++} rtp_hdr_t;
++
++/** RTP header size */
++#define RTP_HDR_SIZE  12
++/** RTP MPEG header size */
++#define RTP_MPEG_HDR_SIZE 4
++/** RTP CSRC list entry size */
++#define RTP_CSRC_SIZE 4
++
++int  rtp_read_pkt(rtp_hdr_t *pkt, int fd);
++
++/** 
++ * 16 bits value packing macro 
++ *
++ * @param ptr pointer to buffer in which the data is packed
++ * @param i value to pack
++ * @warning advances pointer
++ */
++#define UINT16_PACK(ptr, i) \
++   { *(ptr++) = (((i) >> 8) & 0xFF); \
++     *(ptr++) = ((i)        & 0xFF); }
++
++/** 
++ * 32 bits value packing macro 
++ *
++ * @param ptr pointer to buffer in which the data is packed
++ * @param i value to pack
++ * @warning advances pointer
++ */
++#define UINT32_PACK(ptr, i) \
++   { *(ptr++) = (((i) >> 24) & 0xFF); \
++     *(ptr++) = (((i) >> 16) & 0xFF); \
++     *(ptr++) = (((i) >> 8)  & 0xFF); \
++     *(ptr++) = ((i)         & 0xFF); }
++
++/** 
++ * 16 bits value unpacking macro 
++ *
++ * @param ptr pointer to buffer from which the data is unpacked
++ * @return unpacked value
++ * @warning advances pointer
++ */
++#define UINT16_UNPACK(ptr) uint16_unpack__(&ptr)
++unsigned int uint16_unpack__(unsigned char **ptr);
++
++/** 
++ * 32 bits value unpacking macro 
++ *
++ * @param ptr pointer to buffer from which the data is unpacked
++ * @return unpacked value
++ * @warning advances pointer
++ */
++#define UINT32_UNPACK(ptr) uint32_unpack__(&ptr)
++unsigned int uint32_unpack__(unsigned char **ptr);
