@@ -23,6 +23,7 @@
 #include "network.h"
 #include "signal.h"
 #include "http.h"
+#include "misc.h"
 
 #ifdef WITH_IPV6
 static int use_ipv6 = 0;
