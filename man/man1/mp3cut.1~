@@ -1,0 +1,28 @@
+.TH MP3CUT 1 "February 2005" "" "User Command"
+.SH NAME
+.B mp3cue 
+\- cut a MP3 file according to a CUE file
+.SH SYNOPSIS
+.B mp3cue
+.RB -c
+.I cuefile
+.I mp3file
+.br
+.SH DESCRIPTION
+The
+.B mp3cue
+utility cuts a MP3 file
+.Ar mp3file
+containing multiple tracks according to a CUE file
+.Ar cuefile
+.
+The length and position of the single tracks is read from the CUE
+file, and new tracks are created accordingly. The tracks are named
+according to the artist and album information contained in the CUE
+file, and ID3 v2 tags are set accordingly. The MP3 file is not cut on
+frame boundary, but on ADU (autonomous data unit) boundary, thus
+avoiding glitches and cracks in the resulting MP3 files.
+
+.SH AUTHORS
+Manuel Odendahl <manuel@bl0rg.net>, Florian Wesch <dividuum@bl0rg.net>
+
