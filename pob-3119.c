@@ -282,7 +282,7 @@ int pob_prebuffer(int sock, dlist_head_t *pkt_list, int quiet,
   buffering queue out to standard output.
 **/
 int pob_mainloop(int sock, int quiet) {
-  int retval;
+  int retval = 0;
   
   /*M
     Time of the first received packet, is filled by the prebuffering

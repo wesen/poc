@@ -1,22 +1,61 @@
-CFLAGS?=-Wall -g
-#CFLAGS+=-DWITH_OPENSSL 
+# GNU Makefile for poc, mp3cue, mp3cut
+#
+# Please compile with GNU make.
+#
+# 2005 bl0rg.net
+
+CFLAGS += -Wall -O2
+
+# Uncomment this flag to add ipv6 support to poc
 #CFLAGS+=-DWITH_IPV6
+
+# Uncomment these flags to add SSL support to poc
+#CFLAGS+=-DWITH_OPENSSL 
 #LDFLAGS+=-lssl -lcrypto
+
+# Uncomment these flags to debug
+#CFLAGS += -g
 #CFLAGS+=-DDEBUG
 #CFLAGS+=-DMALLOC -ldmalloc
-#CFLAGS += -O2
-TEXIFY?=./texify.pl
-FLEX=flex
-LIBS=-lfl
 
-# bison
+TEXIFY := ./texify.pl
+FLEX=flex
+FLEX_LIBS=-lfl
+
+# Use these definitions when using bison
 YACC=bison -b y
 
-#YACC
+# Use these definitions when using yacc
 #YACC=yacc
 #LIBS+=-ly
 
-all:  servers clients mp3cue mp3cut
+all:  servers clients mp3cue mp3cut mp3length
+
+# Create dependencies
+%.d: %.c
+	gcc -MM $(CFLAGS) $< > $@
+	gcc -MM $(CFLAGS) $< | sed s/\\.o/.d/ >> $@
+
+MP3_OBJS     := mp3-read.o mp3-write.o mp3.o aq.o 
+NETWORK_OBJS := network.o network4.o network6.o
+RTP_OBJS     := rtp.o rtp-rb.o
+UTILS_OBJS   := pack.o bv.o signal.o dlist.o file.o buf.o crc32.o
+FEC_OBJS     := galois.o matrix.o fec.o fec-pkt.o fec-rb.o fec-group.o
+OGG_OBJS     := ogg.o vorbis.o ogg-read.o ogg-write.o vorbis-read.o
+
+OBJS := $(MP3_OBJS) \
+        $(OGG_OBJS) \
+        $(NETWORK_OBJS) \
+        $(RTP_OBJS) \
+        $(UTILS_OBJS) \
+        $(FEC_OBJS)
+DEPS := $(patsubst %.o,%.d,$(OBJS))
+include $(DEPS)
+
+# mp3cue
+MP3CUE_OBJS := $(MP3_OBJS) $(UTILS_OBJS) \
+               mp3cue-lex.yy.o mp3cue-y.tab.o mp3cue-main.o
+include mp3cue-main.d
 
 mp3cue-lex.yy.c: mp3cue.l
 	$(FLEX) -o$@ $<
@@ -24,149 +63,144 @@ mp3cue-lex.yy.o: mp3cue-lex.yy.c mp3cue-y.tab.c
 	$(CC) -c -o $@ mp3cue-lex.yy.c
 mp3cue-y.tab.c: mp3cue.y
 	$(YACC) -d -o $@ $<
-mp3cue-y.tab.o: mp3cue-y.tab.c
-	$(CC) -c -o $@ $<
+mp3cue: $(MP3CUE_OBJS)
+	$(CC) $(CFLAGS) -o mp3cue $(MP3CUE_OBJS) \
+              $(LDFLAGS) $(LIBS) $(FLEX_LIBS)
+mp3cue-clean:
+	- rm -rf $(MP3CUE_OBJS) \
+                 mp3cue-lex.yy.c mp3cue-y.tab.c mp3cue-y.tab.h \
+		 mp3cue mp3cue.exe
 
-mp3cue: mp3-read.o mp3-write.o mp3.o mp3cue-main.c bv.o mp3.h bv.h \
-        mp3cue-lex.yy.o mp3cue-y.tab.o aq.o file.o \
-	dlist.o
-	$(CC) $(CFLAGS) -o $@  mp3cue-main.c mp3-read.o mp3-write.o mp3.o \
-	 bv.o mp3cue-lex.yy.o mp3cue-y.tab.o aq.o file.o \
-	 dlist.o $(LDFLAGS) $(LIBS)
+# mp3cut
+MP3CUT_OBJS := $(MP3_OBJS) $(UTILS_OBJS) mp3cut.o
+include mp3cut.d
 
-mp3cut: mp3-read.o mp3-write.o mp3.o mp3cut.o bv.o mp3.h bv.h aq.o file.o dlist.o
-	$(CC) $(CFLAGS) -o $@  mp3-read.o mp3-write.o mp3.o mp3cut.o bv.o aq.o file.o dlist.o \
-        $(LDFLAGS) $(LIBS)
+mp3cut: $(MP3CUT_OBJS)
+	$(CC) $(CFLAGS) -o mp3cut $(MP3CUT_OBJS) $(LDFLAGS) $(LIBS)
+mp3cut-clean:
+	- rm -rf $(MP3CUT_OBJS) mp3cut mp3cut.exe
 
-mp3length: mp3-read.o mp3-write.o mp3.o mp3length.o bv.o mp3.h bv.h aq.o file.o dlist.o
-	$(CC) $(CFLAGS) -o $@  mp3-read.o mp3-write.o mp3.o mp3length.o bv.o aq.o file.o dlist.o \
-        $(LDFLAGS) $(LIBS)
+MP3LENGTH_OBJS := $(MP3_OBJS) $(UTILS_OBJS) mp3length.o
+include mp3length.d
 
-aq.o: aq.c aq.h conf.h
-buf.o: buf.c buf.h conf.h
-bv.o: bv.c bv.h conf.h
-crc32.o: crc32.c crc32.h conf.h
-dlist.o: dlist.c dlist.h conf.h
-fec-group.o: fec-group.c fec-group.h fec.h conf.h
-fec-pkt.o: fec-pkt.c pack.h fec-pkt.h conf.h
-fec-rb.o: fec-rb.c fec-group.h conf.h
-fec.o: fec.c fec.h matrix.h conf.h
-file.o: file.h file.c conf.h
-galois.o: galois.c galois.h
-huffman-read.o: huffman-read.c bv.h
-matrix.o: matrix.c matrix.h
-mp3-huffman.o: mp3-huffman.o bv.h mp3.h conf.h
-mp3-read.o: mp3-read.c mp3.h bv.h conf.h
-mp3-sf.o: mp3-sf.c bv.h mp3.h conf.h
-mp3-trans.o: mp3-trans.c mp3.h conf.h
-mp3-write.o: mp3-write.c mp3.h bv.h conf.h
-mp3.o: mp3.c mp3.h conf.h
-network.o: network.h network.c conf.h
-network4.o: network.h pack.h network4.c conf.h
-network6.o: network6.c pack.h network.h conf.h
-ogg.o: ogg.c ogg.h crc32.h buf.h conf.h pack.h
-ogg-read.o: ogg-read.c ogg.h file.h pack.h crc32.h conf.h
-ogg-write.o: ogg-write.c ogg.h pack.h file.h crc32.h conf.h
-pack.o: pack.c pack.h conf.h
-pob-2250-rb.o: pob-2250-rb.c conf.h rtp.h rtp-rb.h network.h
-pob-2250.o: pob-2250.c conf.h rtp.h network.h dlist.h
-pob-3119-rb.o: pob-3119-rb.c conf.h rtp.h rtp-rb.h aq.h network.h
-pob-3119.o: pob-3119.c conf.h rtp.h aq.h network.h dlist.h
-pob-fec.o: pob-fec.c conf.h fec-pkt.h aq.h fec.h network.h
-poc-2250.o: poc-2250.c conf.h mp3.h rtp.h signal.h file.h
-poc-3319.o: poc-3119.c conf.h mp3.h aq.h network.h rtp.h signal.h file.h
-poc-fec.o: poc-fec.c conf.h mp3.h network.h fec-pkt.h pack.h aq.h signal.h
-poc-http.o: poc-http.c conf.h file.h mp3.h network.h signal.h
-pogg-http.o: pogg-http.c conf.h file.h vorbis.h network.h ogg.h signal.h
-rtp-rb.o: rtp-rb.c rtp.h conf.h
-rtp.o: rtp.c pack.h rtp.h conf.h
-signal.o: signal.c signal.h conf.h
-vorbis.o: vorbis.c ogg.h buf.h vorbis.h conf.h
-vorbis-read.o: vorbis-read.c ogg.h file.h buf.h vorbis.h pack.h bv.h
-
-NETWORK_O=network.o network4.o network6.o
-MP3_O=mp3.o mp3-read.o mp3-write.o aq.o
-RTP_O=rtp.o rtp-rb.o
-UTILS_O=pack.o bv.o signal.o dlist.o file.o buf.o crc32.o
-FEC_O=galois.o matrix.o fec.o fec-pkt.o fec-rb.o fec-group.o
-OGG_O=ogg.o vorbis.o ogg-read.o ogg-write.o vorbis-read.o
+mp3length: $(MP3LENGTH_OBJS)
+	$(CC) $(CFLAGS) -o mp3length $(MP3LENGTH_OBJS) $(LDFLAGS) $(LIBS)
+mp3length-clean:
+	- rm -rf $(MP3LENGTH_OBJS) mp3length mp3length.exe
 
 # Servers
-servers: poc-2250 poc-3119 poc-2250-ploss poc-3119-ploss poc-fec \
-	poc-fec-ploss poc-http pogg-http
+SERVERS := poc-2250 \
+           poc-3119 \
+           poc-2250-ploss \
+           poc-3119-ploss \
+           poc-fec \
+	   poc-fec-ploss \
+           poc-http \
+           pogg-http
+SERVERS_EXE := $(patsubst %,%.exe,$(SERVERS))
+SERVERS_OBJS := 
+
+servers: $(SERVERS)
+
+MP3RTP_OBJS := $(NETWORK_OBJS) $(MP3_OBJS) $(RTP_OBJS) $(UTILS_OBJS)
+
+# RFC 2250 protocol
+POC_2250_OBJS := $(MP3RTP_OBJS) poc-2250.o
+include poc-2250.d
+poc-2250: $(POC_2250_OBJS)
+	$(CC) $(CFLAGS) -o poc-2250 $(POC_2250_OBJS) $(LDFLAGS) $(LIBS)
+POC_2250_PLOSS_OBJS := $(MP3RTP_OBJS) poc-2250-ploss.o
+poc-2250-ploss.o: poc-2250.c
+	$(CC) $(CFLAGS) -DDEBUG_PLOSS -c -o $@ $<
+poc-2250-ploss: $(POC_2250_PLOSS_OBJS)
+	$(CC) $(CFLAGS) -o $@ $(POC_2250_PLOSS_OBJS) $(LDFLAGS) $(LIBS)
+SERVERS_OBJS += $(POC_2250_OBJS) $(POC_2250_PLOSS_OBJS)
+
+# RFC 3119 protocol
+POC_3119_OBJS := $(MP3RTP_OBJS) poc-3119.o
+include poc-3119.d
+poc-3119: $(POC_3119_OBJS)
+	$(CC) $(CFLAGS) -o poc-3119 $(POC_3119_OBJS) $(LDFLAGS) $(LIBS)
+POC_3119_PLOSS_OBJS := $(MP3RTP_OBJS) poc-3119-ploss.o
+poc-3119-ploss.o: poc-3119.c
+	$(CC) $(CFLAGS) -DDEBUG_PLOSS -c -o $@ $<
+poc-3119-ploss: $(POC_3119_PLOSS_OBJS)
+	$(CC) $(CFLAGS) -o $@ $(POC_3119_PLOSS_OBJS) $(LDFLAGS) $(LIBS)
+SERVERS_OBJS += $(POC_3119_OBJS) $(POC_3119_PLOSS_OBJS)
+
+# FEC protocol
+MP3FEC_OBJS := $(MP3_OBJS) $(NETWORK_OBJS) $(UTILS_OBJS) $(FEC_OBJS)
+POC_FEC_OBJS := $(MP3FEC_OBJS) poc-fec.o
+include poc-fec.d
+poc-fec: $(POC_FEC_OBJS)
+	$(CC) $(CFLAGS) -o $@ $(POC_FEC_OBJS) $(LDFLAGS) $(LIBS)
+POC_FEC_PLOSS_OBJS := $(MP3FEC_OBJS) poc-fec-ploss.o
+poc-fec-ploss.o: poc-fec.c
+	$(CC) $(CFLAGS) -DDEBUG_PLOSS -c -o $@ $<
+poc-fec-ploss: $(POC_FEC_PLOSS_OBJS)
+	$(CC) $(CFLAGS) -o $@ $(POC_FEC_PLOSS_OBJS) $(LDFLAGS) $(LIBS)
+SERVERS_OBJS += $(POC_FEC_OBJS) $(POC_FEC_PLOSS_OBJS)
+
+# mp3 and ogg HTTP server
+POC_HTTP_OBJS := $(MP3_OBJS) $(NETWORK_OBJS) $(UTILS_OBJS) poc-http.o
+include poc-http.d
+poc-http: $(POC_HTTP_OBJS)
+	$(CC) $(CFLAGS) -o $@ $(POC_HTTP_OBJS) $(LDFLAGS) $(LIBS)
+SERVERS_OBJS += $(POC_HTTP_OBJS)
+
+POGG_HTTP_OBJS := $(OGG_OBJS) $(NETWORK_OBJS) $(UTILS_OBJS) pogg-http.o
+include pogg-http.d
+pogg-http: $(POGG_HTTP_OBJS)
+	$(CC) $(CFLAGS) -o $@ $(POGG_HTTP_OBJS) $(LDFLAGS) $(LIBS)
+SERVERS_OBJS += $(POGG_HTTP_OBJS)
 
 servers-clean:
-	- rm -f poc-2250 poc-3119 poc-2250-ploss poc-3119-ploss poc-fec \
-	poc-fec-ploss poc-http pogg-http
-
-poc-2250: poc-2250.o $(NETWORK_O) $(MP3_O) $(RTP_O) $(UTILS_O)
-	$(CC) $(CFLAGS) -o $@ poc-2250.o \
-	$(MP3_O) $(RTP_O) $(UTILS_O) $(NETWORK_O) \
-		$(LDFLAGS)
-
-poc-3119: poc-3119.o $(NETWORK_O) $(MP3_O) $(RTP_O) $(UTILS_O)
-	$(CC) $(CFLAGS) -o $@ poc-3119.o \
-	$(NETWORK_O) $(MP3_O) $(RTP_O) $(UTILS_O) \
-		$(LDFLAGS)
-
-poc-2250-ploss: poc-2250.c $(NETWORK_O) $(MP3_O) $(RTP_O) $(UTILS_O)
-	$(CC) -DDEBUG_PLOSS $(CFLAGS) -o $@ poc-2250.c \
-	$(NETWORK_O) $(MP3_O) $(RTP_O) $(UTILS_O) \
-		$(LDFLAGS)
-
-poc-3119-ploss: poc-3119.c $(NETWORK_O) $(MP3_O) $(RTP_O) $(UTILS_O)
-	$(CC) -DDEBUG_PLOSS $(CFLAGS) -o $@ poc-3119.c \
-	$(NETWORK_O) $(MP3_O) $(RTP_O) $(UTILS_O) \
-		$(LDFLAGS)
-
-poc-fec: poc-fec.o $(NETWORK_O) $(MP3_O) $(RTP_O) $(UTILS_O) $(FEC_O)
-	$(CC) $(CFLAGS) -o $@ poc-fec.o \
-	$(NETWORK_O) $(MP3_O) $(UTILS_O) $(FEC_O) \
-		$(LDFLAGS)
-
-poc-fec-ploss: poc-fec.c $(NETWORK_O) $(MP3_O) $(RTP_O) $(UTILS_O) $(FEC_O)
-	$(CC) -DDEBUG_PLOSS $(CFLAGS) -o $@ poc-fec.c \
-	$(NETWORK_O) $(MP3_O) $(UTILS_O) $(FEC_O) \
-		$(LDFLAGS)
-
-poc-http: poc-http.o $(NETWORK_O) $(MP3_O) $(UTILS_O)
-	$(CC) $(CFLAGS) -o $@ poc-http.o \
-	$(NETWORK_O) $(MP3_O) $(UTILS_O) $(LDFLAGS)
-
-pogg-http: pogg-http.o $(NETWORK_O) $(OGG_O) $(UTILS_O)
-	$(CC) $(CFLAGS) -o $@ pogg-http.o \
-	$(NETWORK_O) $(OGG_O) $(UTILS_O) $(LDFLAGS)
+	- rm -f $(SERVERS) $(SERVERS_EXE) $(SERVERS_OBJS)
 
 # Clients
-clients: pob-2250 pob-3119 pob-fec pob-3119-rb pob-2250-rb
+CLIENTS := pob-2250 \
+           pob-3119 \
+           pob-fec \
+           pob-3119-rb \
+           pob-2250-rb
+CLIENTS_EXE := $(patsubst %,%.exe,$(CLIENTS))
+CLIENTS_OBJS :=
+
+clients: $(CLIENTS)
+
+RTP_CLIENT_OBJS := $(RTP_OBJS) $(NETWORK_OBJS) $(UTILS_OBJS) $(MP3_OBJS)
+
+# RFC 2250 client
+POB_2250_OBJS := $(RTP_CLIENT_OBJS) pob-2250.o
+include pob-2250.d
+pob-2250: $(POB_2250_OBJS)
+	$(CC) $(CFLAGS) -o $@ $(POB_2250_OBJS) $(LDFLAGS) $(LIBS)
+POB_2250_RB_OBJS := $(RTP_CLIENT_OBJS) pob-2250-rb.o
+include pob-2250-rb.d
+pob-2250-rb: $(POB_2250_RB_OBJS)
+	$(CC) $(CFLAGS) -o $@ $(POB_2250_RB_OBJS) $(LDFLAGS) $(LIBS)
+CLIENTS_OBJS += $(POB_2250_OBJS) $(POB_2250_RB_OBJS)
+
+# RFC 3119 client
+POB_3119_OBJS := $(RTP_CLIENT_OBJS) pob-3119.o
+include pob-3119.d
+pob-3119: $(POB_3119_OBJS)
+	$(CC) $(CFLAGS) -o $@ $(POB_3119_OBJS) $(LDFLAGS) $(LIBS)
+POB_3119_RB_OBJS := $(RTP_CLIENT_OBJS) pob-3119-rb.o
+include pob-3119-rb.d
+pob-3119-rb: $(POB_3119_RB_OBJS)
+	$(CC) $(CFLAGS) -o $@ $(POB_3119_RB_OBJS) $(LDFLAGS) $(LIBS)
+CLIENTS_OBJS += $(POB_3119_OBJS) $(POB_3119_RB_OBJS)
+
+# FEC client
+POB_FEC_OBJS := $(NETWORK_OBJS) $(FEC_OBJS) $(UTILS_OBJS) $(MP3_OBJS) pob-fec.o
+include pob-fec.d
+pob-fec: $(POB_FEC_OBJS)
+	$(CC) $(CFLAGS) -o $@ $(POB_FEC_OBJS) $(LDFLAGS) $(LIBS)
+CLIENTS_OBJ += $(POB_FEC_OBJS)
 
 clients-clean:
-	- rm -f pob-2250 pob-3119 pob-3119-rb pob-2250-rb pob-fec
-
-pob-2250: pob-2250.o $(RTP_O) $(NETWORK_O) $(UTILS_O)
-	$(CC) $(CFLAGS) -o $@ pob-2250.c \
-	$(RTP_O) $(NETWORK_O) $(UTILS_O) \
-			$(LDFLAGS)
-
-pob-3119: pob-3119.o $(RTP_O) $(NETWORK_O) $(MP3_O) $(UTILS_O)
-	$(CC) $(CFLAGS) -o $@ pob-3119.c \
-		$(RTP_O) $(MP3_O) $(NETWORK_O) $(UTILS_O) \
-		$(LDFLAGS)
-
-pob-3119-rb: pob-3119-rb.o $(RTP_O) $(NETWORK_O) $(MP3_O) $(UTILS_O)
-	$(CC) $(CFLAGS) -o $@ pob-3119-rb.c \
-		$(RTP_O) $(MP3_O) $(NETWORK_O) $(UTILS_O) \
-		$(LDFLAGS)
-
-pob-2250-rb: pob-2250-rb.o $(RTP_O) $(NETWORK_O) $(MP3_O) $(UTILS_O)
-	$(CC) $(CFLAGS) -o $@ pob-2250-rb.c \
-		$(RTP_O) $(MP3_O) $(NETWORK_O) $(UTILS_O) \
-		$(LDFLAGS)
-
-pob-fec: pob-fec.o $(RTP_O) $(NETWORK_O) $(MP3_O) $(UTILS_O) $(FEC_O)
-	$(CC) $(CFLAGS) -o $@ pob-fec.c \
-		$(RTP_O) $(MP3_O) $(NETWORK_O) $(UTILS_O) $(FEC_O) \
-		$(LDFLAGS)
+	- rm -f $(CLIENTS) $(CLIENTS_EXE) $(CLIENTS_OBJS)
 
 # Tests
 bvtest: bv.c bv.h
@@ -297,10 +331,10 @@ tex/code.pdf: tex/code.tex $(TEXS)
 tex-clean:
 	- rm -f $(TEXS) tex/studienarbeit.pdf tex/code.pdf tex/*.aux tex/*.log
 
-clean: tests-clean clients-clean servers-clean tex-clean
-	- rm -f *.o *.exe mp3cue-lex.yy.c mp3cue-y.tab.c mp3cue-y.tab.h mp3cue
-
-# Generate Huffman table
-huffman_read.c: huffman.pl huffman-table
-	./huffman.pl huffman-table
-	indent $@
+clean: tests-clean \
+       clients-clean \
+       servers-clean \
+       tex-clean \
+       mp3cue-clean \
+       mp3cut-clean \
+       mp3length-clean

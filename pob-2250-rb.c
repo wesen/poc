@@ -182,7 +182,7 @@ int pob_recv_pkt(int sock, rtp_pkt_t *pkt) {
   buffering queue out to standard output.
 **/
 int pob_mainloop(int sock, int quiet) {
-  int retval;
+  int retval = 0;
   
   int finished = 0;
   while (!finished) {

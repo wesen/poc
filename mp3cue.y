@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "mp3cue.h"
+
+int yylex();
   
 extern mp3cue_file_t *yymp3_cue_file;
 
@@ -63,10 +65,11 @@ filetitle: TITLE STRING  {
 }
 ;
 
-fileid: FILEID STRING STRING 
+fileid: FILEID STRING STRING
 ;
 
-restblubber: STRING | STRING restblubber
+restblubber: STRING { }
+| STRING restblubber { }
 ;
 
 tracklist: track tracklist

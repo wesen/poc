@@ -191,7 +191,7 @@ unsigned long cksum(char *data, int len) {
   buffering queue out to standard output.
 **/
 int pob_mainloop(int sock, int quiet) {
-  int retval;
+  int retval = 0;
   
   /*M
     Initialize the ADU to frame ADU queue.

@@ -537,7 +537,7 @@ int main(int argc, char *argv[]) {
    /*M
      Open the listening socket.
    **/
-   int sock;
+   int sock = -1;
 #ifdef WITH_IPV6
    if (use_ipv6)
      sock = net_tcp6_listen_socket(address, port);

@@ -362,7 +362,7 @@ int pob_mainloop(int sock, int quiet) {
 	  XXX: handle error.
 	**/
       } else {
-      fprintf(stderr, "packet length: %d\n", pkt.length);
+      fprintf(stderr, "packet length: %lu\n", pkt.length);
 
 	/*M
 	  Insert new packet into the buffering list.
