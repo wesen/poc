@@ -46,7 +46,7 @@ int my_write(int fd, unsigned char *buf, size_t size) {
 
   while ((i = write(fd, buf + len, size - len))) {
     if (i < 0) {
-      if (errno == EINTR)
+      if ((errno == EINTR) || (errno == EAGAIN))
         continue;
       else {
         perror("write");
@@ -127,7 +127,7 @@ int poc_mainloop(http_server_t *server, char *filename, int quiet) {
         ret = my_write(server->clients[i].fd, frame.raw, frame.frame_size);
         
         if (ret != frame.frame_size) {
-          fprintf(stderr, "Error writing to client %d\n", i);
+          fprintf(stderr, "Error writing to client %d: %d\n", i, ret);
           http_client_close(server, server->clients + i);
         }
       }
