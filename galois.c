@@ -9,22 +9,22 @@
 /*M
   \emph{Polynomial representation of field elements.}
 **/
-gf gf_polys[256];
+gf gf_polys[256] = { 0 };
 
 /*M
   \emph{Logarithmic representation of field elements.}
 **/
-gf gf_logs[256];
+gf gf_logs[256] = { 0 };
 
 /*M
   \emph{Precomputed multiplication table.}
 **/
-gf gf_mul[256][256];
+gf gf_mul[256][256] = { { 0 } };
 
 /*M
   \emph{Precomputed inverse table.}
 **/
-gf gf_inv[256];
+gf gf_inv[256] = { 0 };
 
 /*M
   \emph{A primitive polynomial.}

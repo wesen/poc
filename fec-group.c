@@ -101,7 +101,7 @@ void fec_group_print(fec_group_t *group) {
   \emph{Insert a received FEC packet into a FEC group.}
 **/
 void fec_group_insert_pkt(fec_group_t *group,
-			      fec_pkt_t *pkt) {
+                          fec_pkt_t *pkt) {
   assert(group != NULL);
   assert(pkt != NULL);
 
