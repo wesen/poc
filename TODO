@@ -1,0 +1,118 @@
+X Dokumentation fuer aq.c
+X Dokumentation fuer dlist.[ch]
+X network.c schreiben
+X Support fuer RFC2250 in rtp.c fertig schreiben
+X Tabellen in mp3-read.c
+X poc.c fertig schreiben
+X pob.c erweitern
+X SSL in rtp.c
+X SSL in pob-2250.c poc-2250.c
+X SSL testen  
+X subversion einrichten auf setf
+X conf.h bauen
+X unter linux, HP/UX kompilieren
+X Timing Problem bei SSL
+X errorlog2tex.pl schreiben
+X bv.[ch] Dokumentation schreiben
+X tex in subversion einchecken
+X FEC: X Galois X Matrixcode X FEC Code
+
+X poc-3119.c schreiben
+X pob-3119.c schreiben
+
+X Packetloss testen bei pob-3119 und pob-2250
+X Packetloss randomisieren
+X Ueber Kommandozeile plossrate einstellen
+
+X Backpointer setzen bei einfuegen von 
+  leeren ADUs genauer angucken (RFC falsch!)
+
+X Documentation FEC
+X Documentation formatieren innerhalb der Funktionen
+
+X Algorithmus in transcoding.tex fertig schreiben
+
+X implementation.tex schreiben
+
+X Debug Code in pob-fec
+
+X pob-* mit statischen Ringbuffern schreiben, und nicht mit verketteten Listen
+
+X Buffering notes:
+X	  - ringbuffer for incoming packets
+X	  - use time of last played packet for reference
+X	  - handle strange cases
+
+X Vortrag fertig vorbereiten
+
+X Sleeptimeadjustment sinnvoller gestalten
+
+X poc-http.c wieder herstellen
+
+Xpob-fec fertigschreiben
+X   - Dekodieren der Gruppen in fec-group.c
+X   - Ausgabe der dekodierten Frames in der AQ
+
+X Sync probleme bei den Servern!
+
+X Studienarbeit fertigschreiben!
+
+X Memory Leaks entfernen
+
+Dokumentation fertig schreiben
+
+Nistnet testen 
+
+-------------------------
+
+X rtp.c Objektorientiert mit pack,unpack Pointer in der rtp_pkt_t Struktur
+
+X MallocBug angucken
+
+X Growing allocator for Vorbis packets
+
+- Content-Type bei HTTP servern
+
+X OGG Vorbis support
+  X Einlesen von OGG Dateien
+    X OGG pages einlesen
+      X CRC implementieren
+      X Schreiben von OGG pages
+    X Vorbis stream einlesen
+      X Vorbis Header einlesen
+      X Vorbis Audiodaten einlesen
+
+  X OGG HTTP Streamer
+    X Vorbis Header an jeden neuen Client schicken
+    X Schicken von OGG Pages (Syncen auf Granule Position)
+
+---- 2te release
+
+  - OGG RTP Streamer
+    - Vorbis Pakete schreiben
+      - Konvertierung nach OGG pages
+    - Vorbis RTP Header support
+    - 2tes Socket fuer Codebook
+    - Einfuegen von Vorbis Daten in RTP Pakete
+
+- ipv6 testen
+
+- Vorbis multiple logical bitstreams
+
+- Pob-3119 pakete discarden, die zu spaet kommen
+
+- id3tags handeln
+- Protokolle um Metainformation erweitern (Anfrage)
+
+- Interleaving in poc-3119 und pob-3119
+
+- aq mit Ringpuffer
+
+- select nach EINTR checken in pob
+
+- poc-http-inetd.c schreiben
+- dlist != NULL bei 1000.wav.mp3 mit rfc3119
+
+- Kryptierte Keys einlesen
+- SSL bei poc-fec
+
