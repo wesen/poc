@@ -350,6 +350,8 @@ clean: tests-clean \
        mp3length-clean \
        dep-clean
 
+USER  ?= root
+GROUP ?= root
 PREFIX:= /usr/local
 install: install-man
 	install -g root -o root -m 0755 mp3cue    $(DESTDIR)/$(PREFIX)/bin

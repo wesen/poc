@@ -19,6 +19,33 @@
 #include "network.h"
 #include "pack.h"
 
+/*
+ * Resolve an IP4 hostname (XXX IP6 support later).
+ */
+int net_ip4_resolve_hostname(const char *hostname,
+                             unsigned short port,
+                             unsigned char ip[4],
+                             struct sockaddr_in *saddr) {
+  assert(hostname != NULL);
+
+  struct hostent *host;
+  if (NULL == (host = gethostbyname(hostname))) {
+    perror("gethostbyname");
+    return 0;
+  }
+  if (host->h_length != 4) {
+    return 0;
+  }
+  if (ip != NULL)
+    memcpy(ip, host->h_addr_list[0], host->h_length);
+  if (saddr != NULL) {
+    memcpy(&saddr->sin_addr, host->h_addr_list[0], host->h_length);
+    saddr->sin_port = port;
+  }
+
+  return 1;
+}
+
 /*M
   \emph{Create an UDP socket.}
 
@@ -88,21 +115,9 @@ static int net_udp4_socket(struct sockaddr_in *saddr,
 int net_udp4_send_socket(char *hostname,
 			 unsigned short port,
 			 unsigned char ttl) {
-  /*M
-    Get hostname address.
-  **/
-  struct hostent *host;
-
-  if (NULL == (host = gethostbyname(hostname))) {
-    perror("gethostbyname");
-    return -1;
-  }
-
-  /*M
-    Init sockaddr structure.
-  **/
   struct sockaddr_in saddr;
-  memcpy(&saddr.sin_addr, host->h_addr_list[0], (size_t)host->h_length);
+  if (!net_ip4_resolve_hostname(hostname, port, NULL, &saddr))
+    return -1;
 
   /*M
     Create udp socket.
@@ -136,20 +151,8 @@ int net_udp4_send_socket(char *hostname,
 **/
 int net_udp4_recv_socket(char *hostname,
 			unsigned short port) {
-  /*M
-    Get hostname address.
-  **/
-  struct hostent *host = NULL;
-  if (hostname)
-    host = gethostbyname(hostname);
-
-  /*M
-    Initialize sockaddr structure.
-  **/
   struct sockaddr_in addr;
-  if (host)
-    memcpy(&addr.sin_addr, host->h_addr_list[0], (size_t)host->h_length);
-  else
+  if (!net_ip4_resolve_hostname(hostname, port, NULL, &addr))
     memset(&addr.sin_addr, 0, sizeof(addr.sin_addr));
 
   /*M
@@ -241,26 +244,9 @@ int net_tcp4_bind_reuse(int s,
 }
 
 int net_tcp4_listen_socket(char *hostname, unsigned short port) {
-  /*M
-    Get hostname address.
-  **/
-  struct hostent *host = NULL;
-  if (hostname)
-    host = gethostbyname(hostname);
-
-  /*M
-    Initialize sockaddr structure.
-  **/
   unsigned char ip[4];
-  if (host) {
-    if (host->h_length != 4) {
-      perror("gethostbyname");
-      return -1;
-    }
-    memcpy(ip, host->h_addr_list[0], sizeof(ip));
-  } else {
+  if (!net_ip4_resolve_hostname(hostname, port, ip, NULL))
     memset(ip, 0, sizeof(ip));
-  }
   
   int sock;
   if (((sock = net_tcp4_nonblock_socket()) < 0) ||

@@ -5,6 +5,11 @@
 #ifndef NET_H__
 #define NET_H__
 
+int net_ip4_resolve_hostname(const char *hostname,
+                             unsigned short port,
+                             unsigned char ip[4],
+                             struct sockaddr_in *saddr);
+
 int net_udp4_send_socket(char *hostname,
 			  unsigned short port,
 			  unsigned char ttl);
