@@ -30,16 +30,6 @@ static int use_ipv6 = 0;
 static int finished = 0;
 
 /*M
-  \emph{Maximal size of HTTP header.}
-**/
-#define HTTP_MAX_HDR_LEN 8192
-
-/*M
-  \emph{Seconds before HTTP timeout.}
-**/
-#define HTTP_TIMEOUT     20
-
-/*M
 **/
 #define OGG_BUF_LEN 65535
 
@@ -57,259 +47,20 @@ static void sig_int(int signo) {
 }
 
 /*M
-  \emph{Structure used to save information about HTTP clients.}
-**/
-typedef struct http_client_s {
-   int fd, found, in, len;
-   char buf[HTTP_MAX_HDR_LEN];
-   time_t fini;
-} http_client_t;
-
-/*M
   \emph{Clients array.}
 **/
 http_client_t *client = NULL;
 int client_num = 0;
 
-int client_http(struct http_client_s *client, vorbis_stream_t *vorbis);
-void client_check(void);
-int client_close(struct http_client_s *client);
-void client_init(struct http_client_s *client);
-
-/*M
-  \emph{Close the connection to client with an error code.}
-
-  Sends back the error code \verb|code| and the comment
-  \verb|comment|.
-**/
-void bad_request(struct http_client_s *client, 
-                 unsigned long code, const char *comment, const char *msg) {
-   char buf[256];
-   int len;
-
-   len = snprintf(buf, 256,
-		  "HTTP/1.0 %lu %s\r\nConnection: close\r\n\r\n%s\r\n", 
-		  code, comment, msg);
-   write(client->fd, buf, len);
-}
-
-/*M
-  \emph{Accept a HTTP client connection.}
-
-  Accept the connection on the listening socket and fill the client
-  structure.
-**/
-int http_accept(unsigned short sock) {
-  unsigned char ip[16];
-  unsigned short port;
-  int fd, i;
-  
-  /*M
-    Accept the connection
-  **/
-  if ((fd = net_tcp4_accept_socket(sock, ip, &port)) < 0)
-    return 0;
-
-  if (net_tcp4_socket_nonblock(sock) == -1) {
-    close(sock);
-    return 0;
-  }
-  
-  /*M
-    Find an empty client structure and fill it with filedescriptor
-    and timeout value
-  **/
-  for (i = 0; i < client_num; i++) {
-    if (client[i].fd == -1) {
-      client[i].fd = fd;
-      client[i].fini = time(NULL) + HTTP_TIMEOUT;
-      return 1;
-    }
-  }
-  
-  close(fd);
-  
-  return 1;
-}
-
-/*M
-  \emph{Main HTTP server routine.}
-  
-  Select on the listening socket and all opened client
-  sockets. Accept incoming connections and call the
-  \verb|http_client| function on active clients.
-**/
-int http_main(unsigned short sock, vorbis_stream_t *vorbis) {
-  int i;
-  
-  fd_set fds;
-  struct timeval tout;
-  
-  tout.tv_usec = 0;
-  tout.tv_sec = 0;
-  
-  FD_ZERO(&fds);
-  
-  /*M
-    Select the listening HTTP socket.
-  **/
-  FD_SET(sock, &fds);
-  
-  /*M
-    Select all active client sockets.
-  **/
-  for (i = 0; i < client_num; i++) {
-    if (client[i].fd != -1) {
-      FD_SET(client[i].fd, &fds);
-    }
-  }
-  
-  if (select(FD_SETSIZE, &fds, NULL, NULL, &tout) < 0) {
-    return 0;
-  }
-  
-  /*M
-    Accept incoming connections.
-  **/
-  if (FD_ISSET(sock, &fds)) {
-    if (!http_accept(sock))
-      return 0;
-  }
-  
-  /*M
-     Read incoming client data.
-   **/
-   for (i = 0; i < client_num; i++) {
-      if ((client[i].fd != -1) &&
-	  (FD_ISSET(client[i].fd, &fds))) {
-	if (client_http(client + i, vorbis) < 0) {
-	  client_close(client + i);
-	}
-      }
-   }
-   
-   /*M
-     Check for client timeouts.
-   **/
-   client_check();
-      
-   return 1;
-}
-
-/*M
-  \emph{Read data from client connection.}
-
-  Reads the remaining header data.
-**/
-int client_http(struct http_client_s *client, vorbis_stream_t *vorbis) {
-   time_t        now;
-   int  tmp;
-
-   /*M
-     Read header data.
-   **/
-   tmp = read(client->fd, client->buf + client->len, 
-         HTTP_MAX_HDR_LEN - client->len - 5);
-
-   if (tmp <= 0)
-      return -1;
-
-   client->in += tmp;
-
-   /*M
-     A header was already found.
-   **/
-   if (client->found >= 2)
-      return 0;
-
-   now = time(0);
-
-   /*M
-     Check if the end of header is in the read data.
-   **/
-   for (; (client->found < 2) && (client->len < client->in);
-         ++client->len) {
-      if (client->buf[client->len] == '\r')
-         continue;
-      if (client->buf[client->len] == '\n')
-         ++client->found;
-      else
-         client->found = 0;
-   }
-
-   /*M
-     The client request was too short.
-   **/
-   if (client->len < 10) {
-      bad_request(client, 400, "Bad Request", "Not HTTP");
-      return -1;
-   }
-   
-   client->buf[client->len] = '\0';
-
-   /*M
-     Check if the request is a ``GET /'', else discard the request.
-   **/
-   if (!strncasecmp(client->buf, "GET /", 5)) {
-      if (write(client->fd, "HTTP/1.0 200 OK\r\n\r\n", 19) != 19)
-         return -1;
-
+callback() {
       /* XXX write ogg headers */
       int i;
       for (i = 0; i < vorbis->hdr_pages_cnt; i++) {
-	if (write(client->fd, vorbis->hdr_pages[i].raw.data,
-		  vorbis->hdr_pages[i].size) != vorbis->hdr_pages[i].size)
-	  return -1;
-      }
-      
-      return 1;
-   } else {
-      bad_request(client, 400, "Bad Request", "Unsupported HTTP Method");
-      return -1;
-   }
-
-   return 0;
-}
-
-/*M
-  \emph{Check all clients for timeouts.}
-**/
-void client_check(void) {
-   int i;
-
-   for (i = 0; i < client_num; i++) {
-      if ((client[i].fd != -1) && 
-          (client[i].found < 2) &&
-          (time(NULL) >= client[i].fini)) {
-         client_close(client);
-      }
-   }
-}
-
-/*M
-  \emph{Destroy a client structure.}
-**/
-int client_close(struct http_client_s *client) {
-   int retval = 0;
-
-   if (client->fd != -1) {
-      retval = close(client->fd);
-   }
-
-   client_init(client);
-
-   return retval;
-}
-
-/*M
-  \emph{Initialise a client structure.}
-**/
-void client_init(struct http_client_s *client) {
-   client->fd    = -1;
-   client->found = 0;
-   client->in    = 0;
-   client->len   = 0;
-}
+        if (write(client->fd, vorbis->hdr_pages[i].raw.data,
+                  vorbis->hdr_pages[i].size) != vorbis->hdr_pages[i].size)
+          return -1;
+    }
+}  
 
 /*M
   \emph{Simple HTTP streaming server main loop.}
@@ -399,32 +150,35 @@ int pogg_mainloop(int sock, char *filename, int quiet) {
       Print information.
     **/
     if (!quiet) {
-      if (vorbis.file.size > 0) {
-	fprintf(stderr,
-		"\r%02ld:%02ld/%02ld:%02ld %7ld/%7ld "
-		"(%3ld%%) %3ldkbit/s %4ldb ",
-		(page_time/1000) / 60,
-		(page_time/1000) % 60,
-		(long)((float)(page_time) / 
-		       ((float)vorbis.file.offset+1) *
-		       (float)vorbis.file.size) / 
-		60000,
-		(long)((float)(page_time) / 
-		       ((float)vorbis.file.offset+1) *
-		       (float)vorbis.file.size) / 
-		1000 % 60,
-		vorbis.file.offset,
-		vorbis.file.size,
-		(long)(100*(float)vorbis.file.offset/(float)vorbis.file.size),
-		vorbis.bitrate_nominal/1000,
-		page.size);
-      } else {
-	fprintf(stderr, "\r%02ld:%02ld %ld %3ldkbit/s %4ldb ",
-		(page_time/1000) / 60,
-		(page_time/1000) % 60,
-		vorbis.file.offset,
-		vorbis.bitrate_nominal/1000,
-		page.size);
+      static int count = 0;
+      if ((count++ % 10) == 0) {
+        if (vorbis.file.size > 0) {
+          fprintf(stderr,
+                  "\r%02ld:%02ld/%02ld:%02ld %7ld/%7ld "
+                  "(%3ld%%) %3ldkbit/s %4ldb ",
+                  (page_time/1000) / 60,
+                  (page_time/1000) % 60,
+                  (long)((float)(page_time) / 
+                         ((float)vorbis.file.offset+1) *
+                         (float)vorbis.file.size) / 
+                  60000,
+                  (long)((float)(page_time) / 
+                         ((float)vorbis.file.offset+1) *
+                         (float)vorbis.file.size) / 
+                  1000 % 60,
+                  vorbis.file.offset,
+                  vorbis.file.size,
+                  (long)(100*(float)vorbis.file.offset/(float)vorbis.file.size),
+                  vorbis.bitrate_nominal/1000,
+                  page.size);
+        } else {
+          fprintf(stderr, "\r%02ld:%02ld %ld %3ldkbit/s %4ldb ",
+                  (page_time/1000) / 60,
+                  (page_time/1000) % 60,
+                  vorbis.file.offset,
+                  vorbis.bitrate_nominal/1000,
+                  page.size);
+        }
       }
       fflush(stderr);
     }

@@ -121,6 +121,7 @@ int poc_encoder(int sock, char *filename) {
 
 	assert(max_len < FEC_PKT_PAYLOAD_SIZE);
 
+        /* Encode the FEC group */
 	unsigned char *in_ptrs[fec_k];
 	unsigned char buf[fec_k * max_len];
 	unsigned char *ptr = buf;
@@ -186,29 +187,36 @@ int poc_encoder(int sock, char *filename) {
 	  if (wait_time > 1000)
 	    usleep(wait_time);
 
-	  if (!quiet) {
-	    if (mp3_file.size > 0) {
-	      fprintf(stdout,
-		      "\r%02ld:%02ld/%02ld:%02ld %7ld/%7ld (%3ld%%) ",
-		      (fec_time2/1000000) / 60,
-		      (fec_time2/1000000) % 60,
-		      (long)((float)(fec_time2/1000) / 
-			     ((float)mp3_file.offset+1) * (float)mp3_file.size) / 
-		      60000,
-		      (long)((float)(fec_time2/1000) / 
-			     ((float)mp3_file.offset+1) * (float)mp3_file.size) / 
-		      1000 % 60,
-		      mp3_file.offset,
-		      mp3_file.size,
-		      (long)(100*(float)mp3_file.offset/(float)mp3_file.size));
-	    } else {
-	      fprintf(stdout, "\r%02ld:%02ld %ld ",
-		      (fec_time2/1000000) / 60,
-		      (fec_time2/1000000) % 60,
-		      mp3_file.offset);
-	    }
-	    fflush(stdout);
-	  }
+	  if (!quiet) {	
+            static unsigned int count = 0;
+            if ((count++ % 10) == 0) {
+              if (mp3_file.size > 0) {
+                unsigned long bytes_left = mp3_file.size - mp3_file.offset;
+                double msec_per_byte =
+                  (fec_time2 / 1000.0) / (double)mp3_file.offset;
+                unsigned long msec_left = msec_per_byte * (double)bytes_left;
+                
+                fprintf(stdout,
+                        "\r%02ld:%02ld/%02ld:%02ld %7ld/%7ld (%3ld%%) ",
+                        (fec_time2/1000000) / 60,
+                        (fec_time2/1000000) % 60,
+                        
+                        (msec_left / 1000) / 60,
+                        (msec_left / 1000) % 60,
+                        
+                        mp3_file.offset,
+                        mp3_file.size,
+                        
+                        (long)(100*(float)mp3_file.offset/(float)mp3_file.size));
+              } else {
+                fprintf(stdout, "\r%02ld:%02ld %ld ",
+                        (fec_time2/1000000) / 60,
+                        (fec_time2/1000000) % 60,
+                        mp3_file.offset);
+              }
+              fflush(stdout);
+            }
+          }
 	  
 	  /*M
 	    Get length of iteration.

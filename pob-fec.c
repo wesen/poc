@@ -239,13 +239,17 @@ int pob_mainloop(int sock, int quiet) {
     /*M
       Print client information.
     **/
-    if (!quiet)
-      fprintf(stderr, "pkts: %.8u\tdrop: %.6u\tinc. group: %.6u\tbuf: %.6u len:%.6u\t\r",
-	      pob_stats.rcvd_pkts,
-	      pob_stats.lost_pkts,
-	      pob_stats.incomplete_groups,
-	      fec_rb_cnt,
-	      fec_rb_length());
+    if (!quiet) {
+      static int count = 0;
+      if ((count++ % 10) == 0) {
+        fprintf(stderr, "pkts: %.8u\tdrop: %.6u\tinc. group: %.6u\tbuf: %.6u len:%.6u\t\r",
+                pob_stats.rcvd_pkts,
+                pob_stats.lost_pkts,
+                pob_stats.incomplete_groups,
+                fec_rb_cnt,
+                fec_rb_length());
+      }
+    }
 
 #ifdef DEBUG
     fec_rb_print();

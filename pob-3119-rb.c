@@ -265,13 +265,17 @@ int pob_mainloop(int sock, int quiet) {
     /*M
       Print client information.
     **/
-    if (!quiet)
-      fprintf(stderr, "pkts: %.8u\tdups: %.6u\tdrop: %.6u\tbuf: %.6u len:%.6u\t\r",
-	      pob_stats.rcvd_pkts,
-	      pob_stats.dup_pkts,
-	      pob_stats.ooo_pkts,
-	      rtp_rb_cnt,
-	      rtp_rb_length());
+    if (!quiet) {
+      static int count = 0;
+      if ((count++ % 10) == 0) {
+        fprintf(stderr, "pkts: %.8u\tdups: %.6u\tdrop: %.6u\tbuf: %.6u len:%.6u\t\r",
+                pob_stats.rcvd_pkts,
+                pob_stats.dup_pkts,
+                pob_stats.ooo_pkts,
+                rtp_rb_cnt,
+                rtp_rb_length());
+      }
+    }
 
 #ifdef DEBUG
     rtp_rb_print();
