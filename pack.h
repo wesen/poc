@@ -30,8 +30,8 @@
   argument, and fills the buffer with the big endian packed value
   given as second argument.
 **/
-#define UINT16_PACK(ptr, i)				\
-  { *(ptr++) = (unsigned char)(((i) >> 8) & 0xFF);	\
+#define UINT16_PACK(ptr, i)                         \
+  { *(ptr++) = (unsigned char)(((i) >> 8) & 0xFF);  \
     *(ptr++) = (unsigned char)((i)        & 0xFF); }
 
 /*M
@@ -41,18 +41,18 @@
   argument, and fills the buffer with the big endian packed value
   given as second argument.
 **/
-#define UINT32_PACK(ptr, i)				\
-  { *(ptr++) = (unsigned char)(((i) >> 24) & 0xFF);	\
-    *(ptr++) = (unsigned char)(((i) >> 16) & 0xFF);	\
-    *(ptr++) = (unsigned char)(((i) >> 8)  & 0xFF);	\
+#define UINT32_PACK(ptr, i)                         \
+  { *(ptr++) = (unsigned char)(((i) >> 24) & 0xFF); \
+    *(ptr++) = (unsigned char)(((i) >> 16) & 0xFF); \
+    *(ptr++) = (unsigned char)(((i) >> 8)  & 0xFF); \
     *(ptr++) = (unsigned char)((i)         & 0xFF); }
 
 /*M
   \emph{24 bits value packing macro.}
 **/
-#define UINT24_PACK(ptr, i)				\
-  { *(ptr++) = (unsigned char)(((i) >> 16) & 0xFF);	\
-    *(ptr++) = (unsigned char)(((i) >> 8)  & 0xFF);	\
+#define UINT24_PACK(ptr, i)                         \
+  { *(ptr++) = (unsigned char)(((i) >> 16) & 0xFF); \
+    *(ptr++) = (unsigned char)(((i) >> 8)  & 0xFF); \
     *(ptr++) = (unsigned char)((i)         & 0xFF); }
 
 /*M
@@ -81,8 +81,8 @@ unsigned int uint32_unpack__(/*@out@*/ unsigned char **ptr);
   argument, and fills the buffer with the little endian packed value
   given as second argument.
 **/
-#define LE_UINT16_PACK(ptr, i)				\
-  { *(ptr++) = (unsigned char)((i) & 0xFF);	\
+#define LE_UINT16_PACK(ptr, i)                      \
+  { *(ptr++) = (unsigned char)((i) & 0xFF);         \
     *(ptr++) = (unsigned char)(((i) >> 8) & 0xFF); }
 
 /*M
@@ -92,10 +92,10 @@ unsigned int uint32_unpack__(/*@out@*/ unsigned char **ptr);
   argument, and fills the buffer with the little endian packed value
   given as second argument.
 **/
-#define LE_UINT32_PACK(ptr, i)				\
-  { *(ptr++) = (unsigned char)((i) & 0xFF);	\
-    *(ptr++) = (unsigned char)(((i) >> 8)  & 0xFF);	\
-    *(ptr++) = (unsigned char)(((i) >> 16) & 0xFF);	\
+#define LE_UINT32_PACK(ptr, i)                      \
+  { *(ptr++) = (unsigned char)((i) & 0xFF);         \
+    *(ptr++) = (unsigned char)(((i) >> 8)  & 0xFF); \
+    *(ptr++) = (unsigned char)(((i) >> 16) & 0xFF); \
     *(ptr++) = (unsigned char)(((i) >> 24) & 0xFF); }
 
 /*M

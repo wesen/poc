@@ -104,7 +104,7 @@ int poc_encoder(int sock, char *filename) {
 
       /* check if the FEC group is complete */
       if (++cnt == fec_k) {
-	unsigned int max_len = 0;
+        unsigned int max_len = 0;
         unsigned long group_duration = 0;
 
         int i;

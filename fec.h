@@ -28,11 +28,11 @@ void fec_free(fec_t *fec);
 fec_t *fec_new(unsigned int k, unsigned int n);
 
 void fec_encode(fec_t *fec,
-		gf *src[], gf *dst,
-		unsigned int idx, unsigned int len);
+                gf *src[], gf *dst,
+                unsigned int idx, unsigned int len);
 int fec_decode(fec_t *fec,
-	       gf *buf,
-	       unsigned int idxs[], unsigned len);
+               gf *buf,
+               unsigned int idxs[], unsigned len);
 
 /*C
 **/

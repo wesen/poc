@@ -51,13 +51,13 @@ typedef struct fec_group_s {
 } fec_group_t;
 
 void fec_group_init(fec_group_t *group,
-		    unsigned char fec_k,
-		    unsigned char fec_n,
-		    unsigned char seq,
-		    unsigned long tstamp,
-		    unsigned short fec_len);
+                    unsigned char fec_k,
+                    unsigned char fec_n,
+                    unsigned char seq,
+                    unsigned long tstamp,
+                    unsigned short fec_len);
 void fec_group_destroy(fec_group_t *group);
 void fec_group_clear(fec_group_t *group);
 void fec_group_insert_pkt(fec_group_t *group,
-			  fec_pkt_t *pkt);
+                          fec_pkt_t *pkt);
 int fec_group_decode(fec_group_t *group, aq_t *aq);

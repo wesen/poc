@@ -146,7 +146,7 @@ void ogg_init(void);
 unsigned char *ogg_segment(ogg_page_t *page, int num);
 
 unsigned long ogg_position_to_msecs(ogg_page_t *page,
-				    unsigned long sample_rate);
+                                    unsigned long sample_rate);
 
 #endif /* OGG_H__ */
 

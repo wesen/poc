@@ -344,7 +344,7 @@ int main(int argc, char *argv[]) {
     switch (c) {
     case 's':
       if (address != NULL)
-	free(address);
+        free(address);
 
       address = strdup(optarg);
       break;

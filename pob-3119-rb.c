@@ -401,7 +401,7 @@ int main(int argc, char *argv[]) {
     switch (c) {
     case 's':
       if (address != NULL)
-	free(address);
+        free(address);
 
       address = strdup(optarg);
       break;
@@ -419,46 +419,46 @@ int main(int argc, char *argv[]) {
       break;
 
       /*M
-	If Openssl is used, read in the RSA certificate.
+        If Openssl is used, read in the RSA certificate.
       **/
 #ifdef WITH_OPENSSL
     case 'c':
       {
-	FILE *f;
+        FILE *f;
 
-	if (x509) {
-	  X509_free(x509);
-	  x509 = NULL;
-	}
-	if (pkey) {
-	  EVP_PKEY_free(pkey);
-	  pkey = NULL;
-	  rsa = NULL;
-	}
+        if (x509) {
+          X509_free(x509);
+          x509 = NULL;
+        }
+        if (pkey) {
+          EVP_PKEY_free(pkey);
+          pkey = NULL;
+          rsa = NULL;
+        }
 
-	if (!(f = fopen(optarg, "r")) ||
-	    !PEM_read_X509(f, &x509, NULL, NULL) ||
-	    !(pkey = X509_get_pubkey(x509))) {
-	  fprintf(stderr,
-		  "Could not read certificate %s\n",
-		  optarg);
-	  if (f)
-	    fclose(f);
-	  retval = EXIT_FAILURE;
-	  goto exit;
-	}
+        if (!(f = fopen(optarg, "r")) ||
+            !PEM_read_X509(f, &x509, NULL, NULL) ||
+            !(pkey = X509_get_pubkey(x509))) {
+          fprintf(stderr,
+                  "Could not read certificate %s\n",
+                  optarg);
+          if (f)
+            fclose(f);
+          retval = EXIT_FAILURE;
+          goto exit;
+        }
 
-	fclose(f);
+        fclose(f);
 
-	if (pkey->type != EVP_PKEY_RSA) {
-	  fprintf(stderr, "Key is not a RSA key\n");
-	  retval = EXIT_FAILURE;
-	  goto exit;
-	}
+        if (pkey->type != EVP_PKEY_RSA) {
+          fprintf(stderr, "Key is not a RSA key\n");
+          retval = EXIT_FAILURE;
+          goto exit;
+        }
 
-	rsa = pkey->pkey.rsa;
+        rsa = pkey->pkey.rsa;
 
-	break;
+        break;
       }
 #endif
       

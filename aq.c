@@ -285,7 +285,7 @@ static void aq_make_adu(aq_t *q) {
     unsigned char *ptr = mp3_frame_data_begin(f);
     
     assert(((bytes_here + offset) <= (long)f->frame_data_size) ||
-	   "Frame is too short");
+           "Frame is too short");
     
     memcpy(adu_ptr, ptr + offset, bytes_here);
     adu_ptr += bytes_here;
