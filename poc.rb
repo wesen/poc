@@ -49,9 +49,6 @@ module POC
                                                 
         extern "void libfec_delete_encode(fec_encode_t *)"
 
-        # init library
-        libfec_init(nil, nil)
-
         class Error < Exception 
         end
 
@@ -152,10 +149,40 @@ module POC
         end
 
         module_function :decode, :encode
+
+        def readAdu
+            buffer  = (" " * 4000).to_ptr
+            len = FEC::libfec_read_adu(buffer, 4000)
+            return nil if len == -1
+            buffer.to_s(len)
+        end
+
+        def writeAdu(adu)
+            FEC::libfec_write_adu(adu, adu.size)
+        end
+
+        module_function :readAdu, :writeAdu
+
+        def init(infile = nil, outfile = nil)
+            libfec_init(infile, outfile)
+        end
+
+        module_function :init
     end
 end
 
+=begin
+
+    POC::FEC::init("-", "-")
+    while adu = POC::FEC::readAdu
+        POC::FEC::writeAdu(adu)
+    end
+
+=end
+    
 if __FILE__ == $0
+
+    POC::FEC::init
 
     # 3 Datenpakete ... 
     data = ["foooo", "bl0rg", "baaaz"]
