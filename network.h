@@ -5,6 +5,8 @@
 #ifndef NET_H__
 #define NET_H__
 
+#include "netinet/in.h"
+
 int net_ip4_resolve_hostname(const char *hostname,
                              unsigned short port,
                              unsigned char ip[4],
