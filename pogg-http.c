@@ -23,6 +23,7 @@
 #include "network.h"
 #include "signal.h"
 #include "http.h"
+#include "misc.h"
 
 #ifdef WITH_IPV6
 static int use_ipv6 = 0;
@@ -49,8 +50,8 @@ int ogg_callback(http_client_t *client, void *data) {
   /* XXX write ogg headers */
   int i;
   for (i = 0; i < vorbis->hdr_pages_cnt; i++) {
-    if (write(client->fd, vorbis->hdr_pages[i].raw.data,
-              vorbis->hdr_pages[i].size) != vorbis->hdr_pages[i].size)
+    if (!unix_write(client->fd, vorbis->hdr_pages[i].raw.data,
+		    vorbis->hdr_pages[i].size) != vorbis->hdr_pages[i].size)
       return -1;
   }
 
@@ -124,7 +125,7 @@ int pogg_mainloop(http_server_t *server, char *filename, int quiet) {
           (server->clients[i].found >= 2)) {
         int ret;
         
-        ret = write(server->clients[i].fd, page.raw.data, page.size);
+        ret = unix_write(server->clients[i].fd, page.raw.data, page.size);
         
         if (ret != page.size) {
           fprintf(stderr, "Error writing to client %d\n", i);

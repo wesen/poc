@@ -150,7 +150,7 @@ int pob_recv_pkt(int sock, rtp_pkt_t *pkt) {
     Check for interrupted system call.
   **/
   if (ret == -1) {
-    if (errno == EINTR) {
+    if ((errno == EINTR) || (errno == EAGAIN)) {
       return 0;
     } else {
       perror("select");

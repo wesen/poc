@@ -144,6 +144,9 @@ int fec_rb_insert_pkt(fec_pkt_t *pkt, int idx) {
     fec_rb_end = ((idx + fec_rb_start + 1) % fec_rb_size);
 
   assert(fec_rb_start != fec_rb_end);
+  /* XXX kann anscheinend auch passieren wenn wraparound. Generell
+     muessen hier alle asserts abgefangen werden und mit einer error
+     struktur sauber verarbeitet werden. */
   assert(fec_rb[fec_rb_end].buf == NULL);
 
   return 1;

@@ -23,6 +23,7 @@
 
 #include "pack.h"
 #include "rtp.h"
+#include "misc.h"
 
 /*@+charint@*/
 /*@+boolint@*/
@@ -156,7 +157,7 @@ int rtp_pkt_read(rtp_pkt_t *pkt, int fd) {
   assert(pkt != NULL);
   
   ssize_t len;
-  switch (len = read(fd, pkt->data, RTP_PKT_SIZE)) {
+  switch (len = unix_read(fd, pkt->data, RTP_PKT_SIZE)) {
   case 0:
     /* EOF */
     return 0;

@@ -76,7 +76,7 @@ int net_udp4_socket(struct sockaddr_in *saddr,
     goto error;
   }
 
-  if (saddr->sin_addr.s_addr == INADDR_BROADCAST) {
+  {
     static int allow = 1;
     if (setsockopt(fd, SOL_SOCKET, SO_BROADCAST, (char*)&allow, sizeof(allow)) == -1) {
       perror("setsockopt");
