@@ -209,6 +209,16 @@ include adutomp3.d
 adutomp3: $(ADUTOMP3_OBJS)
 	$(CC) $(CFLAGS) -o $@ $(ADUTOMP3_OBJS) $(LDFLAGS) $(LIBS)
 
+FIFO_READ_OBJS := misc.o fifo-read.o
+include fifo-read.d
+fifo-read: $(FIFO_READ_OBJS)
+	$(CC) $(CFLAGS) -o $@ $(FIFO_READ_OBJS) $(LDFLAGS) $(LIBS)
+
+FIFO_WRITE_OBJS := misc.o fifo-write.o
+include fifo-write.d
+fifo-write: $(FIFO_WRITE_OBJS)
+	$(CC) $(CFLAGS) -o $@ $(FIFO_WRITE_OBJS) $(LDFLAGS) $(LIBS)
+
 # Tests
 bvtest: bv.c bv.h
 	$(CC) $(CFLAGS) -o $@ -DBV_TEST bv.c $(LDFLAGS)
