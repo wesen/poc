@@ -111,8 +111,8 @@ int poc_mainloop(int sock, char *filename, int quiet) {
 #ifdef WITH_OPENSSL
     if (rsa != NULL) {
       if (!rtp_pkt_sign(&pkt, rsa)) {
-	fprintf(stderr, "\nCould not sign packet\n");
-	return 0;
+        fprintf(stderr, "\nCould not sign packet\n");
+        return 0;
       }
       pkt.b.pt = RTP_PT_SMPA;
     }
@@ -126,8 +126,8 @@ int poc_mainloop(int sock, char *filename, int quiet) {
 #endif /* DEBUG_PLOSS */
       /* send rtp packet */
       if (rtp_pkt_send(&pkt, sock) < 0) {
-	perror("Error while sending packet");
-	return 0;
+        perror("Error while sending packet");
+        return 0;
       }
 #ifdef DEBUG_PLOSS
     }
@@ -218,10 +218,10 @@ int poc_mainloop(int sock, char *filename, int quiet) {
 static void usage(void) {
 #ifdef WITH_OPENSSL
   fprintf(stderr,
-	  "Usage: ./poc [-s address] [-p port] [-q] [-t ttl] [-c pem] files...\n");
+          "Usage: ./poc [-s address] [-p port] [-q] [-t ttl] [-c pem] files...\n");
 #else
   fprintf(stderr,
-	  "Usage: ./poc [-s address] [-p port] [-q] [-t ttl] files...\n");
+          "Usage: ./poc [-s address] [-p port] [-q] [-t ttl] files...\n");
 #endif
   
   fprintf(stderr, "\t-s address : destination address (default 224.0.1.23)\n");
@@ -261,7 +261,7 @@ int main(int argc, char *argv[]) {
     switch (c) {
     case 's':
       if (address != NULL)
-	free(address);
+        free(address);
 
       address = strdup(optarg);
       break;
@@ -279,49 +279,49 @@ int main(int argc, char *argv[]) {
       break;
 
       /*M
-	If Openssl is used, read in the RSA key.
+        If Openssl is used, read in the RSA key.
       **/
 #ifdef WITH_OPENSSL
     case 'c':
       {
-	if (rsa != NULL) {
-	  RSA_free(rsa);
-	  rsa = NULL;
-	}
+        if (rsa != NULL) {
+          RSA_free(rsa);
+          rsa = NULL;
+        }
 
-	FILE *f = NULL;
-	if (!(f = fopen(optarg, "r"))) {
-	  fprintf(stderr,
-		  "Could not open private key %s\n",
-		  optarg);
-	  retval = EXIT_FAILURE;
-	  goto exit;
-	}
+        FILE *f = NULL;
+        if (!(f = fopen(optarg, "r"))) {
+          fprintf(stderr,
+                  "Could not open private key %s\n",
+                  optarg);
+          retval = EXIT_FAILURE;
+          goto exit;
+        }
 
-	if (!(rsa = PEM_read_RSAPrivateKey(f, NULL, NULL, NULL))) {
-	  fprintf(stderr,
-		  "Could not read private key %s\n",
-		  optarg);
-	  fclose(f);
-	  retval = EXIT_FAILURE;
-	  goto exit;
-	}
+        if (!(rsa = PEM_read_RSAPrivateKey(f, NULL, NULL, NULL))) {
+          fprintf(stderr,
+                  "Could not read private key %s\n",
+                  optarg);
+          fclose(f);
+          retval = EXIT_FAILURE;
+          goto exit;
+        }
 
-	fclose(f);
+        fclose(f);
 
-	OpenSSL_add_all_digests();
-	break;
+        OpenSSL_add_all_digests();
+        break;
       }
 #endif /* WITH_OPENSSL */
 
 #ifdef DEBUG_PLOSS
     case 'P':
       {
-	static struct timeval tv;
-	gettimeofday(&tv, NULL);
-	srandom(tv.tv_sec);
-	ploss_rate = atoi(optarg);
-	break;
+        static struct timeval tv;
+        gettimeofday(&tv, NULL);
+        srandom(tv.tv_sec);
+        ploss_rate = atoi(optarg);
+        break;
       }
 #endif /* DEBUG_PLOSS */
 

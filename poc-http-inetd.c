@@ -16,10 +16,10 @@
   \emph{Print a HTTP failure header to standard out.}
 **/
 static void pob_bad_request(unsigned long code,
-			    const char *comment,
-			    const char *msg) {
+                            const char *comment,
+                            const char *msg) {
   printf("HTTP/1.0 %lu %s\r\nConnection: close\r\n\r\n%s\r\n",
-	 code, comment, msg);
+         code, comment, msg);
 }
 
 int pob_http(void) {
@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
     switch (c) {
     case 's':
       if (address != NULL)
-	free(address);
+        free(address);
       address = strdup(optarg);
       break;
 

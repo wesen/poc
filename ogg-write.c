@@ -24,7 +24,7 @@ int ogg_fill_page_hdr(ogg_page_t *page) {
   if (page->raw.size < size)
     if (!buf_grow(&page->raw))
       return 0;
-	
+
   unsigned char *ptr = page->raw.data;
   UINT8_PACK(ptr, OGG_SYNC_HDR_BYTE1);
   UINT8_PACK(ptr, OGG_SYNC_HDR_BYTE2);

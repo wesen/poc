@@ -60,7 +60,7 @@ unsigned char *ogg_segment(ogg_page_t *page, int num) {
   msecs.}
 **/
 unsigned long ogg_position_to_msecs(ogg_page_t *page,
-				       unsigned long sample_rate) {
+                                    unsigned long sample_rate) {
   assert(page != NULL);
   
   unsigned char *ptr = page->position;

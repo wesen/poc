@@ -5,7 +5,7 @@
 #include "conf.h"
 
 int net_seqnum_diff(unsigned long seq1, unsigned long seq2,
-		 unsigned long maxseq) {
+                    unsigned long maxseq) {
   if (seq2 >= seq1) {
     if ((seq2 - seq1) < (maxseq / 2))
       return seq2 - seq1;

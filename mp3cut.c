@@ -172,21 +172,21 @@ static unsigned int parse_arguments(mp3cut_t *mp3cuts, unsigned int max_cuts,
         if (!fromstr && !tostr)
           goto exit_usage;
 
-	if (fromstr && (strlen(fromstr) > 0)) {
-	  if (parse_time(fromstr, &mp3cuts[mp3cuts_cnt].from) < 0) {
-	    goto exit_usage;
-	  }
-	} else {
-	  mp3cuts[mp3cuts_cnt].from = 0;
-	}
+        if (fromstr && (strlen(fromstr) > 0)) {
+          if (parse_time(fromstr, &mp3cuts[mp3cuts_cnt].from) < 0) {
+            goto exit_usage;
+          }
+        } else {
+          mp3cuts[mp3cuts_cnt].from = 0;
+        }
 
-	if (tostr && (strlen(tostr) > 0)) {
-	  if (parse_time(tostr, &mp3cuts[mp3cuts_cnt].to) < 0) {
-	    goto exit_usage;
-	  }
-	} else {
-	  mp3cuts[mp3cuts_cnt].to = 0;
-	}
+        if (tostr && (strlen(tostr) > 0)) {
+          if (parse_time(tostr, &mp3cuts[mp3cuts_cnt].to) < 0) {
+            goto exit_usage;
+          }
+        } else {
+          mp3cuts[mp3cuts_cnt].to = 0;
+        }
       }
       i++;
     } else {
@@ -324,27 +324,27 @@ int main(int argc, char *argv[]) {
           free(adu);
           
         } else {
-	  /* ignore error */
-	}
+          /* ignore error */
+        }
       } else {
-	finished = 1;
-	if (ret != EEOF) {
-	  fprintf(stderr, "Error reading from %s: %d\n", mp3cuts[i].filename, ret);
-	} else {
-	  if ((current / 1000) <= mp3cuts[i].from) {
-	    fprintf(stderr, "Could not extract data from %s, file too short\n",
-		    mp3cuts[i].filename);
-	  } else {
-	    if (mp3cuts[i].to == 0)
-	      continue;
-	  
-	    char timebuf[256];
-	    unsigned long duration = (current / 1000) - mp3cuts[i].from;
-	    format_time(duration, timebuf, sizeof(timebuf));
-	    fprintf(stderr, "Could only extract %s from %s, file too short\n",
-		    timebuf, mp3cuts[i].filename);
-	  }
-	}
+        finished = 1;
+        if (ret != EEOF) {
+          fprintf(stderr, "Error reading from %s: %d\n", mp3cuts[i].filename, ret);
+        } else {
+          if ((current / 1000) <= mp3cuts[i].from) {
+            fprintf(stderr, "Could not extract data from %s, file too short\n",
+                    mp3cuts[i].filename);
+          } else {
+            if (mp3cuts[i].to == 0)
+              continue;
+          
+            char timebuf[256];
+            unsigned long duration = (current / 1000) - mp3cuts[i].from;
+            format_time(duration, timebuf, sizeof(timebuf));
+            fprintf(stderr, "Could only extract %s from %s, file too short\n",
+                    timebuf, mp3cuts[i].filename);
+          }
+        }
       }
     }
 

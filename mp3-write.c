@@ -23,7 +23,7 @@
 int mp3_fill_si(mp3_frame_t *frame) {
   assert(frame != NULL);
   assert((frame->si_bitsize != 0) ||
-	 "Trying to write an empty sideinfo");
+         "Trying to write an empty sideinfo");
 
   unsigned char *ptr = frame->raw + 4;
   if (frame->protected == 0)
@@ -57,21 +57,21 @@ int mp3_fill_si(mp3_frame_t *frame) {
       bv_put_bits(&bv, gr->blocksplit_flag, 1);
 
       if (gr->blocksplit_flag) {
-	bv_put_bits(&bv, gr->block_type, 2);
-	bv_put_bits(&bv, gr->switch_point, 1);
-	bv_put_bits(&bv, gr->tbl_sel[0], 5);
-	bv_put_bits(&bv, gr->tbl_sel[1], 5);
+        bv_put_bits(&bv, gr->block_type, 2);
+        bv_put_bits(&bv, gr->switch_point, 1);
+        bv_put_bits(&bv, gr->tbl_sel[0], 5);
+        bv_put_bits(&bv, gr->tbl_sel[1], 5);
 
-	unsigned int j;
-	for (j = 0; j < 3; j++)
-	  bv_put_bits(&bv, gr->sub_gain[j], 3);
+        unsigned int j;
+        for (j = 0; j < 3; j++)
+          bv_put_bits(&bv, gr->sub_gain[j], 3);
       } else {
-	unsigned int j;
-	for (j = 0; j < 3; j++)
-	  bv_put_bits(&bv, gr->tbl_sel[j], 5);
+        unsigned int j;
+        for (j = 0; j < 3; j++)
+          bv_put_bits(&bv, gr->tbl_sel[j], 5);
 
-	bv_put_bits(&bv, gr->reg0_cnt, 4);
-	bv_put_bits(&bv, gr->reg1_cnt, 3);
+        bv_put_bits(&bv, gr->reg0_cnt, 4);
+        bv_put_bits(&bv, gr->reg1_cnt, 3);
       }
 
       bv_put_bits(&bv, gr->preflag, 1);
@@ -162,8 +162,8 @@ int main(int argc, char *argv[]) {
   while (mp3_next_frame(&in, &frame) > 0) {
     memset(frame.raw, 0, 4 + frame.si_size);
     if (!mp3_fill_hdr(&frame) ||
-	!mp3_fill_si(&frame) ||
-	(mp3_write_frame(&out, &frame) <= 0)) {
+        !mp3_fill_si(&frame) ||
+        (mp3_write_frame(&out, &frame) <= 0)) {
       fprintf(stderr, "Could not write frame\n");
       mp3_close(&in);
       mp3_close(&out);

@@ -77,8 +77,8 @@ void gf_init(void) {
   for (i = 9; i < 255; i++) {
     if (gf_polys[i - 1] >= g)
       /*M
-	$a^{n-1} * a > $ \verb|gf_prim_poly|, then
-	$a^n = a^{n-1} * a = a^8 + ... = a^4 + a^3 + a^2 + 1$.
+        $a^{n-1} * a > $ \verb|gf_prim_poly|, then
+        $a^n = a^{n-1} * a = a^8 + ... = a^4 + a^3 + a^2 + 1$.
       **/
       gf_polys[i] = gf_polys[8] ^ ((gf_polys[i - 1]) << 1);
     else
@@ -102,9 +102,9 @@ void gf_init(void) {
     int j;
     for (j = 0; j < 256; j++) {
       if ((i == 0) || (j == 0))
-	gf_mul[i][j] = 0;
+        gf_mul[i][j] = 0;
       else
-	gf_mul[i][j] = gf_polys[(gf_logs[i] + gf_logs[j]) % 255];
+        gf_mul[i][j] = gf_polys[(gf_logs[i] + gf_logs[j]) % 255];
     }
 
     for (j = 0; j < 256; j++)
@@ -142,7 +142,7 @@ void testit(char *name, int result, int should) {
     printf("Test %s was successful\n", name);
   } else {
     printf("Test %s was not successful, %x should have been %x\n",
-	   name, result, should);
+           name, result, should);
   }
 }
 
@@ -154,14 +154,14 @@ int main(void) {
   b = 37;
   c = 78;
   testit("1 * ( 37 + 78 ) = 1 * 37 + 1 * 78",
-	 GF_MUL(a, GF_ADD(b, c)),
-	 GF_ADD(GF_MUL(a, b), GF_MUL(a, c)));
+         GF_MUL(a, GF_ADD(b, c)),
+         GF_ADD(GF_MUL(a, b), GF_MUL(a, c)));
   testit("(1 * 37) * 78 = 1 * (37 * 78)",
-	 GF_MUL(GF_MUL(a, b), c),
-	 GF_MUL(a, GF_MUL(b, c)));
+         GF_MUL(GF_MUL(a, b), c),
+         GF_MUL(a, GF_MUL(b, c)));
   testit("(37 * 78) * 37 = (37 * 37) * 78",
-	 GF_MUL(GF_MUL(b, c), b),
-	 GF_MUL(GF_MUL(b, b), c));
+         GF_MUL(GF_MUL(b, c), b),
+         GF_MUL(GF_MUL(b, b), c));
   testit("b * b^-1 = 1", GF_MUL(b, GF_INV(b)), 1);
 
   return 0;

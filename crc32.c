@@ -7,7 +7,7 @@
 #include "crc32.h"
 
 void crc32_init(crc32_t *crc, unsigned long poly,
-		unsigned long init, unsigned long xor) {
+                unsigned long init, unsigned long xor) {
   crc->poly = poly;
   crc->init = init;
   crc->xor = xor;
@@ -22,7 +22,7 @@ void crc32_init(crc32_t *crc, unsigned long poly,
       unsigned long bit = r & (1 << 31);
       r <<= 1;
       if (bit)
-	r ^= crc->poly;
+        r ^= crc->poly;
     }
 
     r &= 0xFFFFFFFF;
@@ -31,7 +31,7 @@ void crc32_init(crc32_t *crc, unsigned long poly,
 }
 
 unsigned long crc32(crc32_t *crc,
-		    unsigned char *data, unsigned long len) {
+                    unsigned char *data, unsigned long len) {
   unsigned long r = crc->init;
   unsigned char *ptr = data;
   while (len--)

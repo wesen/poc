@@ -22,7 +22,7 @@
 int mp3_read_si(mp3_frame_t *frame) {
   assert(frame != NULL);
   assert((frame->si_bitsize != 0) ||
-	 "Trying to read an empty sideinfo");
+         "Trying to read an empty sideinfo");
 
   unsigned char *ptr = frame->raw + 4; /* skip header */
   if (/*@-type@*/ frame->protected == 0)
@@ -93,8 +93,8 @@ int mp3_read_si(mp3_frame_t *frame) {
       mp3_granule_t *gr = &si->channel[i].granule[gri];
 
       /*M
-	\emph{Length of main data.}
-	
+        \emph{Length of main data.}
+        
        (ISO) This value contains the number of main data bits used
        for scalefactors and Huffman code data. Because the length
        of the side inforamtion is always the same, this value can
@@ -107,8 +107,8 @@ int mp3_read_si(mp3_frame_t *frame) {
       frame->adu_bitsize += gr->part2_3_length;
 
       /*M
-	\emph{Length of ``big'' Huffman data.}
-	
+        \emph{Length of ``big'' Huffman data.}
+        
        (ISO) The spectral values of each granule are coded with
        different Huffman code tables. The full frequency ranges
        from zero to the Nyquist frequency is divided into several
@@ -143,8 +143,8 @@ xxxxxxxxxxxxx------------------0000000000000000000000000000
       assert((gr->big_values <= 288) || "big_values are too large");
 
       /*M
-	\emph{Global gain.}
-	
+        \emph{Global gain.}
+        
        (ISO) The quantizer step size information is transmitted in
        the side information variable global gain. It is
        logarithmically quantized. For the application of
@@ -154,8 +154,8 @@ xxxxxxxxxxxxx------------------0000000000000000000000000000
       gr->global_gain  = bv_get_bits(&bv, 8);
 
       /*M
-	\emph{Scalefactor compression.}
-	
+        \emph{Scalefactor compression.}
+        
        (ISO) Selects the number of bits used for the transmission
        of the scalefactors according to the following table:
        if block type is 0, 1, or 3:
@@ -213,8 +213,8 @@ xxxxxxxxxxxxx------------------0000000000000000000000000000
       gr->scale_comp   = bv_get_bits(&bv, 4);
 
       /*M
-	\emph{Block windowing split flag.}
-	
+        \emph{Block windowing split flag.}
+        
        (ISO) Signals that the block uses an other than normal (type
        0) window. If blocksplit flag is set, several other
        variables are set by default:
@@ -232,178 +232,178 @@ xxxxxxxxxxxxx------------------0000000000000000000000000000
       gr->blocksplit_flag = bv_get_bits(&bv, 1);
 
       if (gr->blocksplit_flag != 0) {
-	/*M
-	  \emph{Windowing type.}
-	  
-	  (ISO) Indicates the window type for the actual granule
-	  (see description of the filterbank, Layer III).
-	  \begin{itemize}
-	  \item type 0 - reserved
-	  \item type 1 - start block
-	  \item type 2 - 3 short windows
-	  \item type 3 - end block
-	  \end{itemize}
-	  
-	 Block type and switch point give the information about
-	 assembling of values in the block and about length and
-	 count of the transforms. In the case of block type == 2,
-	 the switch point indicates whether some polyphase filter
-	 subbands are coded using long transforms even in case of
-	 block type 2. The polyphase filterbank is described in the
-	 clause 2.4.3.2 of Layer I.
+        /*M
+          \emph{Windowing type.}
+          
+          (ISO) Indicates the window type for the actual granule
+          (see description of the filterbank, Layer III).
+          \begin{itemize}
+          \item type 0 - reserved
+          \item type 1 - start block
+          \item type 2 - 3 short windows
+          \item type 3 - end block
+          \end{itemize}
+          
+         Block type and switch point give the information about
+         assembling of values in the block and about length and
+         count of the transforms. In the case of block type == 2,
+         the switch point indicates whether some polyphase filter
+         subbands are coded using long transforms even in case of
+         block type 2. The polyphase filterbank is described in the
+         clause 2.4.3.2 of Layer I.
 
-	 In the case of long block (block type not equal to 2 or in
-	 the lower subbands of block type 2) the IMDCT generates an
-	 output of 36 values every 18 input values. The output is
-	 windowed depending on the block type and the first half is
-	 overlapped with the second half of the block before. The
-	 resulting vector is the input of the synthesis part of the
-	 polyphase filterbank of one band.
+         In the case of long block (block type not equal to 2 or in
+         the lower subbands of block type 2) the IMDCT generates an
+         output of 36 values every 18 input values. The output is
+         windowed depending on the block type and the first half is
+         overlapped with the second half of the block before. The
+         resulting vector is the input of the synthesis part of the
+         polyphase filterbank of one band.
 
-	 In the case of short blocks (in the upper subbands of a
-	 type 2 block) three transforms are performed producing 12
-	 output values each. The three vectors are windowed and
-	 overlapped each. Concatenating 6 zeros on both ends of the
-	 resulting vector gives a vector of length 36, which is
-	 processed like the output of a long transform.
-	**/
-	gr->block_type = bv_get_bits(&bv, 2);
+         In the case of short blocks (in the upper subbands of a
+         type 2 block) three transforms are performed producing 12
+         output values each. The three vectors are windowed and
+         overlapped each. Concatenating 6 zeros on both ends of the
+         resulting vector gives a vector of length 36, which is
+         processed like the output of a long transform.
+        **/
+        gr->block_type = bv_get_bits(&bv, 2);
 
-	/* if block type is reserved we have a wrong frame */
-	if (gr->block_type == 0) {
-	  fprintf(stderr, "Frame has reserved windowing type, skipping...\n");
-	  return 0;
-	}
+        /* if block type is reserved we have a wrong frame */
+        if (gr->block_type == 0) {
+          fprintf(stderr, "Frame has reserved windowing type, skipping...\n");
+          return 0;
+        }
 
-	/*M
-	  \emph{Switch point.}
-	  
-	 (ISO) Signals the split point of short/long
-	 transforms. The following table shows the number of the
-	 scalefactor band above which window switching
-	 (i.e. block type different from 0 is used.
+        /*M
+          \emph{Switch point.}
+          
+         (ISO) Signals the split point of short/long
+         transforms. The following table shows the number of the
+         scalefactor band above which window switching
+         (i.e. block type different from 0 is used.
 
-	 \begin{tabular}{|l|l|l|}
-	 \hline
-	 switch point &  switch point 1 &  switch point s \\
-	              & (No of sb)     &  (No of sb) \\
+         \begin{tabular}{|l|l|l|}
          \hline
- 	 0         &    0      &         0 \\
-	 \hline
-	 \multicolumn{3}{|c|}{; switching of the whole spectrum} \\
-	 \hline
-	 1        &     8        &       3 \\
-	 \hline
-	 \multicolumn{3}{|c|}{; switching of higher frequencies only} \\
-	 \hline
-	 \end{tabular}
+         switch point &  switch point 1 &  switch point s \\
+                      & (No of sb)     &  (No of sb) \\
+         \hline
+          0         &    0      &         0 \\
+         \hline
+         \multicolumn{3}{|c|}{; switching of the whole spectrum} \\
+         \hline
+         1        &     8        &       3 \\
+         \hline
+         \multicolumn{3}{|c|}{; switching of higher frequencies only} \\
+         \hline
+         \end{tabular}
 
-	 \begin{description}
-	 \item[switching point 1]: Number of scalefactor band (long block
-	 scalefactor band) from which point on window switching is
-	 used
-	 \item[switching point s]: Number of scalefactor band (short
-	 block scalefactor band) from which point on window
-	 switching is used.
-	 \end{description}
-	**/
-	gr->switch_point = bv_get_bits(&bv, 1);
+         \begin{description}
+         \item[switching point 1]: Number of scalefactor band (long block
+         scalefactor band) from which point on window switching is
+         used
+         \item[switching point s]: Number of scalefactor band (short
+         block scalefactor band) from which point on window
+         switching is used.
+         \end{description}
+        **/
+        gr->switch_point = bv_get_bits(&bv, 1);
 
-	/*M
-	  \emph{Huffman code table selection.}
-	  
-	 (ISO) Different Huffman code tables are used depending on the
-	 maximum quantized value and the local statistics of the
-	 signal. There are a total of 32 possible tables given in
-	 3-Annex B Table 3-B.7.
-	**/
-	gr->tbl_sel[0]   = bv_get_bits(&bv, 5);
-	gr->tbl_sel[1]   = bv_get_bits(&bv, 5);
-	gr->tbl_sel[2]   = 0;
+        /*M
+          \emph{Huffman code table selection.}
+          
+         (ISO) Different Huffman code tables are used depending on the
+         maximum quantized value and the local statistics of the
+         signal. There are a total of 32 possible tables given in
+         3-Annex B Table 3-B.7.
+        **/
+        gr->tbl_sel[0]   = bv_get_bits(&bv, 5);
+        gr->tbl_sel[1]   = bv_get_bits(&bv, 5);
+        gr->tbl_sel[2]   = 0;
 
-	/*M
-	  \emph{Subblock gain offset.}
-	  
-	 (ISO) Indicates the gain offset (quantization: factor 4) from
-	 the global gain for one subblock. Used only with block type 2
-	 (short windows). The values of the subblock have to be
-	 divided by $4.^{\textrm{subblock gain(window)}}$ in the
-	 decoder.
-	**/
-	unsigned int j;
-	for (j = 0; j < 3; j++)
-	  gr->sub_gain[j] = bv_get_bits(&bv, 3);
+        /*M
+          \emph{Subblock gain offset.}
+          
+         (ISO) Indicates the gain offset (quantization: factor 4) from
+         the global gain for one subblock. Used only with block type 2
+         (short windows). The values of the subblock have to be
+         divided by $4.^{\textrm{subblock gain(window)}}$ in the
+         decoder.
+        **/
+        unsigned int j;
+        for (j = 0; j < 3; j++)
+          gr->sub_gain[j] = bv_get_bits(&bv, 3);
 
-	/* implicitly set */
-	if (gr->block_type == 2)
-	  gr->reg0_cnt = 9;
-	else
-	  gr->reg0_cnt = 8;
-	gr->reg1_cnt = 0;
-	  
+        /* implicitly set */
+        if (gr->block_type == 2)
+          gr->reg0_cnt = 9;
+        else
+          gr->reg0_cnt = 8;
+        gr->reg1_cnt = 0;
+          
       } else {
-	unsigned int j;
-	for (j = 0; j < 3; j++)
-	  gr->tbl_sel[j] = bv_get_bits(&bv, 5);
+        unsigned int j;
+        for (j = 0; j < 3; j++)
+          gr->tbl_sel[j] = bv_get_bits(&bv, 5);
 
-	/*M
-	  \emph{First region subdivision information.}
-	  
-	 (ISO) A further partitioning of the spectrum is used to
-	 enhance the performance of the Huffman coder. It is a
-	 subdivision of the region which is described by
-	 big values. The purpose of this subdivision is to get
-	 better error robustness and better coding
-	 efficiency. Three regions are used. Each region is coded
-	 using a different Huffman code table depending on the
-	 maximum quantized value and the loval signal
-	 statistics. The values region address[1,2] are used to
-	 point to the boundaries of the regions. The region
-	 boundaries are aligned with the partitioning of the
-	 spectrum into critical bands.
+        /*M
+          \emph{First region subdivision information.}
+          
+         (ISO) A further partitioning of the spectrum is used to
+         enhance the performance of the Huffman coder. It is a
+         subdivision of the region which is described by
+         big values. The purpose of this subdivision is to get
+         better error robustness and better coding
+         efficiency. Three regions are used. Each region is coded
+         using a different Huffman code table depending on the
+         maximum quantized value and the loval signal
+         statistics. The values region address[1,2] are used to
+         point to the boundaries of the regions. The region
+         boundaries are aligned with the partitioning of the
+         spectrum into critical bands.
 
-	 In case of block type == 2 (short blocks) the scalefactor
-	 bands representing the different time slots are counted
-	 separately. If switch point == 0, the total amount of
-	 scalefactor bands for the granule in this case is $12 * 3
-	 = 36$. If block type == 2 and switch point == 1, the amount
-	 of scalefactor bands is $8 + 9 * 3 = 35$. region address1
-	 counts the number of scalefactor bands until the upper
-	 edge of the first region:
+         In case of block type == 2 (short blocks) the scalefactor
+         bands representing the different time slots are counted
+         separately. If switch point == 0, the total amount of
+         scalefactor bands for the granule in this case is $12 * 3
+         = 36$. If block type == 2 and switch point == 1, the amount
+         of scalefactor bands is $8 + 9 * 3 = 35$. region address1
+         counts the number of scalefactor bands until the upper
+         edge of the first region:
 
-	 \begin{tabular}{|l|l|}
-	 \hline
-	 region address1   &     upper edge of region is upper edge 
-	                         of scalefactor band number \\
-         \hline 				 
-	 0     &                  0 (no first region)  \\
-	 1     &                  1 \\
-	 2     &                  2 \\
-	 ...   &                  ... \\
-	 15    &                  15 \\
-	 \hline
-	 \end{tabular}
-	**/
-	gr->reg0_cnt = bv_get_bits(&bv, 4);
+         \begin{tabular}{|l|l|}
+         \hline
+         region address1   &     upper edge of region is upper edge 
+                                 of scalefactor band number \\
+         \hline                                  
+         0     &                  0 (no first region)  \\
+         1     &                  1 \\
+         2     &                  2 \\
+         ...   &                  ... \\
+         15    &                  15 \\
+         \hline
+         \end{tabular}
+        **/
+        gr->reg0_cnt = bv_get_bits(&bv, 4);
 
-	/*M
-	  \emph{Second region subdivision information.}
-	  
-	 (ISO) Region address2 counts the number of scalefactor
-	 bands which are partially or totally in region 3. Again if
-	 block type == 2 the scalefactor bands representing
-	 different time slots are counted separately.
-	**/
-	gr->reg1_cnt = bv_get_bits(&bv, 3);
+        /*M
+          \emph{Second region subdivision information.}
+          
+         (ISO) Region address2 counts the number of scalefactor
+         bands which are partially or totally in region 3. Again if
+         block type == 2 the scalefactor bands representing
+         different time slots are counted separately.
+        **/
+        gr->reg1_cnt = bv_get_bits(&bv, 3);
 
-	/* implicitly set */
-	gr->block_type   = 0;
-	gr->switch_point = 0;
+        /* implicitly set */
+        gr->block_type   = 0;
+        gr->switch_point = 0;
       }
 
       /*M
-	\emph{Additional high frequency amplification flag.}
-	
+        \emph{Additional high frequency amplification flag.}
+        
        (ISO) This is a shortcut for additional high frequency
        amplification of the quantized values. If preflag is set,
        the values of a table are added to the scalefactors (see
@@ -414,8 +414,8 @@ xxxxxxxxxxxxx------------------0000000000000000000000000000
       gr->preflag     = bv_get_bits(&bv, 1);
 
       /*M
-	\emph{Scalefactor scale step size.}
-	
+        \emph{Scalefactor scale step size.}
+        
        (ISO) The scalefactors are logarithmically quantized with a
        step size of 2 (or sqrt(2)) depending on scalefac scale
        
@@ -425,54 +425,54 @@ xxxxxxxxxxxxx------------------0000000000000000000000000000
       gr->scale_scale = bv_get_bits(&bv, 1);
 
       /*M
-	(ISO) This flag selects one of two possible Huffman code
-	tables for the region of quadruples of quantized values with
-	magnitude not exceeding 1.
+        (ISO) This flag selects one of two possible Huffman code
+        tables for the region of quadruples of quantized values with
+        magnitude not exceeding 1.
 
-	\begin{itemize}
-	\item count1table select = 0       Table A of 3-Annex B.7
-	\item count1table select = 1       Table B of 3-Annex B.7
-	\end{itemize}
+        \begin{itemize}
+        \item count1table select = 0       Table A of 3-Annex B.7
+        \item count1table select = 1       Table B of 3-Annex B.7
+        \end{itemize}
       **/
       gr->cnt1tbl_sel = bv_get_bits(&bv, 1);
 
       /*M
-	\emph{Scalefactor length compression table}
+        \emph{Scalefactor length compression table}
 
-	Table to get scalefactor length information from scale comp.
+        Table to get scalefactor length information from scale comp.
       */
       static const int slen_table[2][16] = {
-	{ 0, 0, 0, 0,
-	  3, 1, 1, 1,
-	  2, 2, 2, 3,
-	  3, 3, 4, 4 },
-	{ 0, 1, 2, 3,
-	  0, 1, 2, 3,
-	  1, 2, 3, 1,
-	  2, 3, 2, 3 }
+        { 0, 0, 0, 0,
+          3, 1, 1, 1,
+          2, 2, 2, 3,
+          3, 3, 4, 4 },
+        { 0, 1, 2, 3,
+          0, 1, 2, 3,
+          1, 2, 3, 1,
+          2, 3, 2, 3 }
       };
 
       /*M
-	\emph{Scalefactor length}
+        \emph{Scalefactor length}
 
-	Calculate the bitlength of the scalefactors.
+        Calculate the bitlength of the scalefactors.
       **/
       gr->slen0 = slen_table[0][gr->scale_comp];
       gr->slen1 = slen_table[1][gr->scale_comp];
 
       /*M
-	\emph{Scalefactor total size}
+        \emph{Scalefactor total size}
 
-	Calculate the total size of the scalefactor information for
-	the granule.
+        Calculate the total size of the scalefactor information for
+        the granule.
       **/
       if (gr->block_type == 2) {
-	if (gr->switch_point != 0)
-	  gr->part2_length = 17 * gr->slen0 + 18 * gr->slen1;
-	else
-	  gr->part2_length = 18 * gr->slen0 + 18 * gr->slen1;
+        if (gr->switch_point != 0)
+          gr->part2_length = 17 * gr->slen0 + 18 * gr->slen1;
+        else
+          gr->part2_length = 18 * gr->slen0 + 18 * gr->slen1;
       } else {
-	gr->part2_length = 11 * gr->slen0 + 10 * gr->slen1;
+        gr->part2_length = 11 * gr->slen0 + 10 * gr->slen1;
       }
 
       gr->part3_length = gr->part2_3_length - gr->part2_length;
@@ -727,10 +727,10 @@ int mp3_skip_id3v2(file_t *mp3, mp3_frame_t *frame) {
 
   /* parse synchsafe integer */
   size_t tag_size = (((id3v2_hdr[6] & 0x7F) << 21) |
-			    ((id3v2_hdr[7] & 0x7F) << 14) |
-			    ((id3v2_hdr[8] & 0x7F) << 7) |
-			    (id3v2_hdr[9] & 0x7F)) +
-    (id3v2_hdr[5] & 0x10 ? 10 : 0);
+                     ((id3v2_hdr[7] & 0x7F) << 14) |
+                     ((id3v2_hdr[8] & 0x7F) << 7) |
+                      (id3v2_hdr[9] & 0x7F)) +
+                      (id3v2_hdr[5] & 0x10 ? 10 : 0);
 
   if (!file_seek_fwd(mp3, tag_size))
     return 0;
@@ -767,8 +767,8 @@ int mp3_next_frame(file_t *mp3, mp3_frame_t *frame) {
     else 
       resync = 0;
   } else if ((frame->raw[0] == 'I') &&
-	     (frame->raw[1] == 'D') &&
-	     (frame->raw[2] == '3')) {
+             (frame->raw[1] == 'D') &&
+             (frame->raw[2] == '3')) {
     if (!mp3_skip_id3v2(mp3, frame)) {
       goto resync;
     } else {

@@ -51,7 +51,7 @@ void dlist_free(dlist_t *dlist) {
   free operation on the nodes data.}
 **/
 void dlist_delete(dlist_t *dlist,
-		  void (*free)(void *data)) {
+                  void (*free)(void *data)) {
   assert(dlist != NULL);
   
   if (dlist->data && free)
@@ -66,7 +66,7 @@ void dlist_delete(dlist_t *dlist,
   Calls a custom delete operation on each node in the double-linked list.
 **/
 void dlist_destroy(dlist_head_t *head,
-		   void (*free)(void *data)) {
+                   void (*free)(void *data)) {
   assert(head != NULL);
   
   dlist_t *dlist, *next;

@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
     switch (c) {
     case 'c':
       if (cuefilename != NULL)
-	free(cuefilename);
+        free(cuefilename);
       cuefilename = strdup(optarg);
       break;
 
@@ -151,14 +151,14 @@ int main(int argc, char *argv[]) {
   for (i = 0; i < cuefile.track_number; i++) {
     char outfilename[MP3CUE_MAX_STRING_LENGTH * 3 + 1];
     if (strlen(cuefile.tracks[i].performer) > 0 &&
-	strlen(cuefile.tracks[i].title) > 0) {
+        strlen(cuefile.tracks[i].title) > 0) {
       snprintf(outfilename, MP3CUE_MAX_STRING_LENGTH * 3,
-	       "%02d. %s - %s.mp3", cuefile.tracks[i].number,
-	       cuefile.tracks[i].performer, cuefile.tracks[i].title);
+               "%02d. %s - %s.mp3", cuefile.tracks[i].number,
+               cuefile.tracks[i].performer, cuefile.tracks[i].title);
     } else {
       snprintf(outfilename, MP3CUE_MAX_STRING_LENGTH * 3,
-	       "%02d. %s.mp3", cuefile.tracks[i].number,
-	       cuefile.title);
+               "%02d. %s.mp3", cuefile.tracks[i].number,
+               cuefile.title);
     }
 
     aq_t qout;
@@ -177,8 +177,8 @@ int main(int argc, char *argv[]) {
 
     /* end time in msecs */
     unsigned long end = (((cuefile.tracks[i].index.minutes * 60) +
-			  cuefile.tracks[i].index.seconds) * 100 +
-			 cuefile.tracks[i].index.centiseconds) * 10;
+                           cuefile.tracks[i].index.seconds) * 100 +
+                           cuefile.tracks[i].index.centiseconds) * 10;
     char from_buf[256], to_buf[256];
     format_time(current, from_buf, sizeof(from_buf));
     format_time(end, to_buf, sizeof(to_buf));
@@ -202,36 +202,36 @@ int main(int argc, char *argv[]) {
     while ((current < end) || (i == (cuefile.track_number - 1))) {
       mp3_frame_t frame;
       if (mp3_next_frame(&mp3file, &frame) > 0) {
-	if (aq_add_frame(&qin, &frame)) { 
-	  adu_t *adu = aq_get_adu(&qin);
-	  assert(adu != NULL);
+        if (aq_add_frame(&qin, &frame)) { 
+          adu_t *adu = aq_get_adu(&qin);
+          assert(adu != NULL);
 
-	  if (aq_add_adu(&qout, adu)) {
-	    mp3_frame_t *frame_out = aq_get_frame(&qout);
-	    assert(frame_out != NULL);
+          if (aq_add_adu(&qout, adu)) {
+            mp3_frame_t *frame_out = aq_get_frame(&qout);
+            assert(frame_out != NULL);
 
-	    memset(frame_out->raw, 0, 4 + frame_out->si_size);
-	    if (!mp3_fill_hdr(frame_out) ||
-		!mp3_fill_si(frame_out) ||
-		(mp3_write_frame(&outfile, frame_out) <= 0)) {
-	      fprintf(stderr, "Could not write frame\n");
-	      file_close(&mp3file);
-	      file_close(&outfile);
-	      retval = 1;
-	      goto exit;
-	    }
-	    
-	    free(frame_out);
-	  }
+            memset(frame_out->raw, 0, 4 + frame_out->si_size);
+            if (!mp3_fill_hdr(frame_out) ||
+                !mp3_fill_si(frame_out) ||
+                (mp3_write_frame(&outfile, frame_out) <= 0)) {
+              fprintf(stderr, "Could not write frame\n");
+              file_close(&mp3file);
+              file_close(&outfile);
+              retval = 1;
+              goto exit;
+            }
+            
+            free(frame_out);
+          }
 
-	  free(adu);
-	}
+          free(adu);
+        }
 
-	current += frame.usec / 1000;
+        current += frame.usec / 1000;
       } else {
         if (i != (cuefile.track_number - 1))
           fprintf(stderr, "Could not read the next frame from the mp3 file...\n");
-	break;
+        break;
       }
     }
 

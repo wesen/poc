@@ -63,7 +63,7 @@ void testit(char *name, int result, int should) {
     printf("Test %s was successful\n", name);
   } else {
     printf("Test %s was not successful, %x should have been %x\n",
-	   name, result, should);
+           name, result, should);
   }
 }
 

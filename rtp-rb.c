@@ -117,8 +117,8 @@ int rtp_rb_insert_pkt(rtp_pkt_t *pkt, int idx) {
 
 #ifdef DEBUG
   fprintf(stderr, "packet inserted at %d, end: %d\n",
-	  (idx + rtp_rb_start) % rtp_rb_size,
-	  rtp_rb_end);
+          (idx + rtp_rb_start) % rtp_rb_size,
+          rtp_rb_end);
 #endif
   
   /* adjust the end pointer */
@@ -135,7 +135,7 @@ void rtp_rb_print(void) {
   assert(rtp_rb != NULL);
 
   fprintf(stderr, "start: %.3u, end: %.3u, len: %.3u\n",
-	  rtp_rb_start, rtp_rb_end, rtp_rb_length());
+          rtp_rb_start, rtp_rb_end, rtp_rb_length());
 }
 
 void rtp_rb_print_rb(void) {

@@ -37,7 +37,7 @@ void matrix_mul(gf *a, gf *b, gf *c, int n, int k, int m) {
 
       int i;
       for (i = 0; i < k; i++, pa++, pb += m)
-	acc = GF_ADD(acc, GF_MUL(*pa, *pb));
+        acc = GF_ADD(acc, GF_MUL(*pa, *pb));
       
       c[row * m + col] = acc;
     }
@@ -92,29 +92,29 @@ int matrix_inv(gf *a, int k) {
       First check the diagonal.
     **/
     if ((ipiv[col] != 1) &&
-	(a[col * k + col] != 0)) {
+        (a[col * k + col] != 0)) {
       irow = col;
       icol = col;
     } else {
       /*M
-	Then search the matrix.
+        Then search the matrix.
       **/
       int row;
       for (row = 0; row < k; row++) {
-	if (ipiv[row] != 1) {
-	  for (i = 0; i < k; i++) {
-	    if (ipiv[i] == 0) {
-	      if (a[row * k + i] != 0) {
-		irow = row;
-		icol = i;
-		goto found_pivot;
-	      }
-	    } else if (ipiv[i] > 1) {
-	      fprintf(stderr, "Singular matrix\n");
-	      return 0;
-	    }
-	  }
-	}
+        if (ipiv[row] != 1) {
+          for (i = 0; i < k; i++) {
+            if (ipiv[i] == 0) {
+              if (a[row * k + i] != 0) {
+                irow = row;
+                icol = i;
+                goto found_pivot;
+              }
+            } else if (ipiv[i] > 1) {
+              fprintf(stderr, "Singular matrix\n");
+              return 0;
+            }
+          }
+        }
       }
       fprintf(stderr, "Pivot not found\n");
       return 0;
@@ -132,9 +132,9 @@ int matrix_inv(gf *a, int k) {
     if (irow != icol) {
       gf tmp;
       for (i = 0; i < k; i++) {
-	tmp = a[irow * k + i];
-	a[irow * k + i] = a[icol * k + i];
-	a[icol * k + i] = tmp;
+        tmp = a[irow * k + i];
+        a[irow * k + i] = a[icol * k + i];
+        a[icol * k + i] = tmp;
       }
     }
 
@@ -156,7 +156,7 @@ int matrix_inv(gf *a, int k) {
       c = GF_INV(c);
       pivot_row[icol] = 1;
       for (i = 0; i < k; i++)
-	pivot_row[i] = GF_MUL(c, pivot_row[i]);
+        pivot_row[i] = GF_MUL(c, pivot_row[i]);
     }
 
     /*M
@@ -168,19 +168,19 @@ int matrix_inv(gf *a, int k) {
     if (bcmp(pivot_row, id_row, k * sizeof(gf)) != 0) {
       gf *p;
       for (p = a, i = 0; i < k; i++, p += k) {
-	/*M
-	  Don't reduce the pivot row.
-	**/
-	if (i != icol) {
-	  gf c = p[icol];
-	  /*M
-	    Zero out the element corresponding to the pivot element
-	    and substract the pivot row multiplied by the zeroed out
-	    element.
-	  **/
-	  p[icol] = 0;
-	  gf_add_mul(p, pivot_row, c, k);
-	}
+        /*M
+          Don't reduce the pivot row.
+        **/
+        if (i != icol) {
+          gf c = p[icol];
+          /*M
+            Zero out the element corresponding to the pivot element
+            and substract the pivot row multiplied by the zeroed out
+            element.
+          **/
+          p[icol] = 0;
+          gf_add_mul(p, pivot_row, c, k);
+        }
       }
     }
     id_row[icol] = 0;
@@ -194,9 +194,9 @@ int matrix_inv(gf *a, int k) {
       int row;
       gf tmp;
       for (row = 0; row < k; row++) {
-	tmp = a[row * k + indxr[col]];
-	a[row * k + indxr[col]] = a[row * k + indxc[col]];
-	a[row * k + indxc[col]] = tmp;
+        tmp = a[row * k + indxr[col]];
+        a[row * k + indxr[col]] = a[row * k + indxc[col]];
+        a[row * k + indxc[col]] = tmp;
       }
     }
   }
@@ -270,7 +270,7 @@ int matrix_inv_vandermonde(gf *a, int k) {
       At each step $P_i = x \cdot P_{i - 1} - p_i \cdot P_{i - 1}$,
        so \verb|c[j] = c[j] + p[i] * c[j+1]|,
           \verb|c[k] = 1| (implicit),
-	  and \verb|c[k-1] = c[k-1] + p_i|.
+          and \verb|c[k-1] = c[k-1] + p_i|.
     **/
     for (j = k - 1 - i; j < k - 1; j++)
       c[j] = GF_ADD(c[j], GF_MUL(p_i, c[j+1]));
@@ -314,36 +314,36 @@ void testit(char *name, unsigned int result, unsigned int should) {
     printf("Test %s was successful\n", name);
   } else {
     printf("Test %s was not successful, %u should have been %u\n",
-	   name, result, should);
+           name, result, should);
   }
 }
 
 int main(void) {
   gf matrix1[4*4] = { 1, 0, 0, 0,
-		      0, 1, 0, 0,
-		      0, 0, 1, 0,
-		      0, 0, 0, 1 };
+                      0, 1, 0, 0,
+                      0, 0, 1, 0,
+                      0, 0, 0, 1 };
   gf matrix2[4*4];
   gf matrix3[4*4] = { 1, 5, 3, 18,
-		      5, 6, 19, 21,
-		      9, 0, 0, 7,
-		      4, 5, 4, 83 };
+                      5, 6, 19, 21,
+                      9, 0, 0, 7,
+                      4, 5, 4, 83 };
   /* from mathematica */
   gf matrix4[4*4] = { 148, 39, 173, 174,
-		      55, 134, 87, 159,
-		      170, 142, 46, 94,
-		      161, 105, 80, 239 };
+                      55, 134, 87, 159,
+                      170, 142, 46, 94,
+                      161, 105, 80, 239 };
   gf matrix5[4*4] = {1, 0, 0, 0,
-		     1, 0, 0, 0,
-		     1, 0, 0, 0,
-		     1, 0, 0, 0};
+                     1, 0, 0, 0,
+                     1, 0, 0, 0,
+                     1, 0, 0, 0};
 
   gf_init();
 
   gf vand1[4*4] = { 1, 2, GF_MUL(2, 2), GF_MUL(2, GF_MUL(2, 2)),
-		    1, 3, GF_MUL(3, 3), GF_MUL(3, GF_MUL(3, 3)),
-		    1, 5, GF_MUL(5, 5), GF_MUL(5, GF_MUL(5, 5)),
-		    1, 7, GF_MUL(7, 7), GF_MUL(7, GF_MUL(7, 7)) };
+                    1, 3, GF_MUL(3, 3), GF_MUL(3, GF_MUL(3, 3)),
+                    1, 5, GF_MUL(5, 5), GF_MUL(5, GF_MUL(5, 5)),
+                    1, 7, GF_MUL(7, 7), GF_MUL(7, GF_MUL(7, 7)) };
   gf vand2[4*4];
       
   testit("invert singular matrix", matrix_inv(matrix5, 4), 0);

@@ -19,18 +19,18 @@ void ogg_print_page_hdr(ogg_page_t *page) {
   
   fprintf(stderr, "page (size: %lu)\n", page->size);
   fprintf(stderr, "flags: c:%d, f:%d, l:%d\n",
-	  page->b.continuation,
-	  page->b.first,
-	  page->b.last);
+          page->b.continuation,
+          page->b.first,
+          page->b.last);
   fprintf(stderr, "stream: %lx, page_no: %lx\n",
-	  page->stream, page->page_no);
+          page->stream, page->page_no);
   fprintf(stderr, "position: %x%x %x%x %x%x %x%x\n",
-	  page->position[0], page->position[1],
-	  page->position[2], page->position[3],
-	  page->position[4], page->position[5],
-	  page->position[6], page->position[7]);	  
+          page->position[0], page->position[1],
+          page->position[2], page->position[3],
+          page->position[4], page->position[5],
+          page->position[6], page->position[7]);          
   fprintf(stderr, "cksum: %lx, page_segments: %d\n",
-	  page->page_cksum, page->page_segments);
+          page->page_cksum, page->page_segments);
 }
 
 void ogg_print_page_segment_table(ogg_page_t *page) {
@@ -39,7 +39,7 @@ void ogg_print_page_segment_table(ogg_page_t *page) {
   int i;
   for (i = 0; i < page->page_segments; i++) {
     fprintf(stderr, "segment %d, lacing value: %d\n",
-	    i, page->lacing_values[i]);
+            i, page->lacing_values[i]);
   }
 }
 
@@ -153,7 +153,7 @@ int ogg_next_page(file_t *ogg, ogg_page_t *page) {
     Read rest of header.
   **/
   if (file_read(ogg, page->raw.data + OGG_SYNC_HDR_SIZE,
-		OGG_HDR_MIN_SIZE - OGG_SYNC_HDR_SIZE) <= 0)
+                OGG_HDR_MIN_SIZE - OGG_SYNC_HDR_SIZE) <= 0)
     return EEOF;
 
   page->size = OGG_HDR_MIN_SIZE;
@@ -177,7 +177,7 @@ int ogg_next_page(file_t *ogg, ogg_page_t *page) {
 
   if (page->page_segments > 0) {
     if (file_read(ogg, page->raw.data + OGG_HDR_MIN_SIZE,
-		  page->page_segments) <= 0)
+                  page->page_segments) <= 0)
       return EEOF;
     
     page->size += page->page_segments;
@@ -194,15 +194,15 @@ int ogg_next_page(file_t *ogg, ogg_page_t *page) {
     int i;
     for (i = 0; i < page->page_segments; i++) {
       if (page->lacing_values[i] > 0) {
-	if ((page->raw.size - page->size) <= page->lacing_values[i]) {
-	  if (!buf_grow(&page->raw))
-	    return 0;
-	}
-	if (file_read(ogg, page->raw.data + page->size,
-		      page->lacing_values[i]) <= 0)
-	  return EEOF;
-	page->size += page->lacing_values[i];
-	page->raw.len += page->lacing_values[i];	
+        if ((page->raw.size - page->size) <= page->lacing_values[i]) {
+          if (!buf_grow(&page->raw))
+            return 0;
+        }
+        if (file_read(ogg, page->raw.data + page->size,
+                      page->lacing_values[i]) <= 0)
+          return EEOF;
+        page->size += page->lacing_values[i];
+        page->raw.len += page->lacing_values[i];        
       }
     }
   }

@@ -99,7 +99,7 @@ int fec_rb_insert_pkt(fec_pkt_t *pkt, int idx) {
 
 #ifdef DEBUG
   fprintf(stderr, "insert packet at idx %d, gseq %d, pseq %d\n",
-	  idx, pkt->hdr.group_seq, pkt->hdr.packet_seq);
+          idx, pkt->hdr.group_seq, pkt->hdr.packet_seq);
 #endif
   
   if (idx < 0) {
@@ -122,11 +122,11 @@ int fec_rb_insert_pkt(fec_pkt_t *pkt, int idx) {
   } else {
     assert(dst_group->pkts == NULL);
     fec_group_init(dst_group,
-		   pkt->hdr.fec_k,
-		   pkt->hdr.fec_n,
-		   pkt->hdr.group_seq,
-		   pkt->hdr.group_tstamp,
-		   pkt->hdr.fec_len);
+                   pkt->hdr.fec_k,
+                   pkt->hdr.fec_n,
+                   pkt->hdr.group_seq,
+                   pkt->hdr.group_tstamp,
+                   pkt->hdr.fec_len);
     fec_group_insert_pkt(dst_group, pkt);
 
     fec_rb_cnt++;
@@ -135,8 +135,8 @@ int fec_rb_insert_pkt(fec_pkt_t *pkt, int idx) {
 
 #ifdef DEBUG
   fprintf(stderr, "packet inserted at %d, end: %d\n",
-	  (idx + fec_rb_start) % fec_rb_size,
-	  fec_rb_end);
+          (idx + fec_rb_start) % fec_rb_size,
+          fec_rb_end);
 #endif
   
   /* adjust the end pointer */
@@ -153,7 +153,7 @@ void fec_rb_print(void) {
   assert(fec_rb != NULL);
 
   fprintf(stderr, "start: %.3u, end: %.3u, len: %.3u\n",
-	  fec_rb_start, fec_rb_end, fec_rb_length());
+          fec_rb_start, fec_rb_end, fec_rb_length());
 }
 
 void fec_rb_print_rb(void) {

@@ -101,9 +101,9 @@ fec_t *fec_new(unsigned int k, unsigned int n) {
   for (row = 0; row < k; row++)
     for (col = 0; col < k; col++)
       if (col == row)
-	res->gen_matrix[row * k + col] = 1;
+        res->gen_matrix[row * k + col] = 1;
       else
-	res->gen_matrix[row * k + col] = 0;
+        res->gen_matrix[row * k + col] = 0;
 
 #ifdef DEBUG
   fprintf(stderr, "\ngenerated matrix\n");
@@ -121,8 +121,8 @@ fec_t *fec_new(unsigned int k, unsigned int n) {
   \verb|idx| $<$ \verb|k|, we just copy the data (systematic matrix).
 **/
 void fec_encode(fec_t *fec,
-		gf *src[], gf *dst,
-		unsigned int idx, unsigned int len) {
+                gf *src[], gf *dst,
+                unsigned int idx, unsigned int len) {
   assert((idx < fec->n) || "Index of output packet to high");
   
   if (idx < fec->k) {
@@ -146,8 +146,8 @@ void fec_encode(fec_t *fec,
   Returns 0 on error, 1 on success.
 **/
 int fec_decode_matrix(fec_t *fec,
-		      gf *matrix,
-		      unsigned int idxs[]) {
+                      gf *matrix,
+                      unsigned int idxs[]) {
   gf *p;
 
   unsigned int i;
@@ -176,14 +176,14 @@ static int fec_shuffle(fec_t *fec, unsigned int idxs[]) {
   unsigned int i;
   for (i = 0; i < fec->k; ) {
     if ((idxs[i] >= fec->k) ||
-	(idxs[i] == i)) {
+        (idxs[i] == i)) {
       i++;
     } else {
       unsigned int c = idxs[i];
 
       /* check for conflicts */
       if (idxs[c] == c)
-	return 0;
+        return 0;
 
       idxs[i] = idxs[c];
       idxs[c] = c;
@@ -192,7 +192,7 @@ static int fec_shuffle(fec_t *fec, unsigned int idxs[]) {
 
   return 1;
 }
-							      
+
 
 /*M
   \emph{Decode the received packets.}
@@ -200,8 +200,8 @@ static int fec_shuffle(fec_t *fec, unsigned int idxs[]) {
   % XXXX
 **/
 int fec_decode(fec_t *fec,
-	       gf *pkts,
-	       unsigned int idxs[], unsigned len) {
+               gf *pkts,
+               unsigned int idxs[], unsigned len) {
   assert(fec != NULL);
   
   if (!fec_shuffle(fec, idxs))
@@ -222,10 +222,9 @@ int fec_decode(fec_t *fec,
       bzero(pkt, len * sizeof(gf));
       unsigned int col;
       for (col = 0; col < fec->k; col++) {
-	gf_add_mul(pkt, pkts + idxs[col] * len,
-		   dec_matrix[row * fec->k + col], len);
+        gf_add_mul(pkt, pkts + idxs[col] * len,
+                   dec_matrix[row * fec->k + col], len);
       }
-	
     }
   }
 
@@ -243,7 +242,7 @@ void testit(char *name, unsigned int result, unsigned int should) {
     printf("Test %s was successful\n", name);
   } else {
     printf("Test %s was not successful, %u should have been %u\n",
-	   name, result, should);
+           name, result, should);
   }
 }
 

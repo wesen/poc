@@ -122,14 +122,14 @@ int pogg_mainloop(http_server_t *server, char *filename, int quiet) {
     for (i = 0; i < server->num_clients; i++) {
       if ((server->clients[i].fd != -1) &&
           (server->clients[i].found >= 2)) {
-	int ret;
-	
-	ret = write(server->clients[i].fd, page.raw.data, page.size);
-	
-	if (ret != page.size) {
-	  fprintf(stderr, "Error writing to client %d\n", i);
-	  http_client_close(server, server->clients + i);
-	}
+        int ret;
+        
+        ret = write(server->clients[i].fd, page.raw.data, page.size);
+        
+        if (ret != page.size) {
+          fprintf(stderr, "Error writing to client %d\n", i);
+          http_client_close(server, server->clients + i);
+        }
       }
     }
     last_time = page_time;
@@ -256,7 +256,7 @@ int main(int argc, char *argv[]) {
        
      case 's':
        if (address != NULL)
-	 free(address);
+         free(address);
 
        address = strdup(optarg);
        break;

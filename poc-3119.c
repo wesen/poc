@@ -116,13 +116,13 @@ int poc_mainloop(int sock, char *filename, int quiet) {
     if (aq_add_frame(&adu_queue, &mp3_frame)) {
 
       /*M
-	An ADU could be generated.
+        An ADU could be generated.
       **/
       adu_t *adu = aq_get_adu(&adu_queue);
       assert(adu != NULL);
     
       /*M
-	Fill rtp packet with the newly generated ADU.
+        Fill rtp packet with the newly generated ADU.
       **/
       pkt.timestamp = (rtp_time) / 11.1111;
 
@@ -130,62 +130,62 @@ int poc_mainloop(int sock, char *filename, int quiet) {
       /* need an extended header? */
       pkt.length = mp3_frame_size(adu);
       if (pkt.length > ((1 << 6) - 1))
-	ptr++;
+        ptr++;
       memcpy(ptr, adu->raw, pkt.length);
 
       /*M
-	Sign the packet if Openssl is activated.
+        Sign the packet if Openssl is activated.
       **/
 #ifdef WITH_OPENSSL
       if (rsa != NULL) {
-	if (!rtp_pkt_sign(&pkt, rsa)) {
-	  fprintf(stderr, "\nCould not sign packet\n");
-	  free(adu);
-	  aq_destroy(&adu_queue);
-	  
-	  return 0;
-	}
-	pkt.b.pt = RTP_PT_SMPA;
+        if (!rtp_pkt_sign(&pkt, rsa)) {
+          fprintf(stderr, "\nCould not sign packet\n");
+          free(adu);
+          aq_destroy(&adu_queue);
+          
+          return 0;
+        }
+        pkt.b.pt = RTP_PT_SMPA;
       }
 #endif
 
       /*M
-	Simulate packet loss.
+        Simulate packet loss.
       **/
 #ifdef DEBUG_PLOSS
       if ((random() % 100) >= ploss_rate ) {
 #endif /* DEBUG_PLOSS */
-	/* send rtp packet */
-	if (rtp_pkt_send(&pkt, sock) < 0) {
-	  perror("Error while sending packet");
-	  free(adu);
-	  aq_destroy(&adu_queue);
-	  
-	  return 0;
-	}
+        /* send rtp packet */
+        if (rtp_pkt_send(&pkt, sock) < 0) {
+          perror("Error while sending packet");
+          free(adu);
+          aq_destroy(&adu_queue);
+          
+          return 0;
+        }
 #ifdef DEBUG_PLOSS
       }
 #endif /* DEBUG_PLOSS */
 
       /*M
-	Update the MPEG timestamp.
+        Update the MPEG timestamp.
       **/
       rtp_time += adu->usec;
 
       /*M
-	Update the time we have to wait.
+        Update the time we have to wait.
       **/
       wait_time += adu->usec;
 
       /*M
-	Sender synchronisation (\verb|sleep| until the next ADU has
-	to be sent.
+        Sender synchronisation (\verb|sleep| until the next ADU has
+        to be sent.
       **/
       if (wait_time > 1000) 
-	usleep(wait_time);
+        usleep(wait_time);
       
       /*M
-	Print sender information.
+        Print sender information.
       **/
       if (!quiet) {
         static int count = 0;
@@ -215,7 +215,7 @@ int poc_mainloop(int sock, char *filename, int quiet) {
                     adu->adu_size);
           }
         }
-	fflush(stdout);
+        fflush(stdout);
       }
 
       free(adu);
@@ -254,7 +254,7 @@ int poc_mainloop(int sock, char *filename, int quiet) {
 **/
 static void usage(void) {
   fprintf(stderr,
-	  "Usage: ./poc [-s address] [-p port] [-q] [-t ttl]");
+          "Usage: ./poc [-s address] [-p port] [-q] [-t ttl]");
 #ifdef WITH_OPENSSL
   fprintf(stderr, " [-c pem]");
 #endif /* WITH_OPENSSL */
@@ -296,12 +296,12 @@ int main(int argc, char *argv[]) {
   int c;
   while ((c = getopt(argc, argv, "hs:p:t:qc:P:"
 #ifdef WITH_OPENSSL
-		     "c:"
+                     "c:"
 #endif /* WITH_OPENSSL */
 #ifdef WITH_IPV6
-		     "6"
-#endif /* WITH_IPV6 */		     
-		     )) >= 0) {
+                     "6"
+#endif /* WITH_IPV6 */                     
+                     )) >= 0) {
     switch (c) {
 #ifdef WITH_IPV6
     case '6':
@@ -311,7 +311,7 @@ int main(int argc, char *argv[]) {
       
     case 's':
       if (address != NULL)
-	free(address);
+        free(address);
 
       address = strdup(optarg);
       break;
@@ -329,49 +329,49 @@ int main(int argc, char *argv[]) {
       break;
 
       /*M
-	If Openssl is used, read in the RSA key.
+        If Openssl is used, read in the RSA key.
       **/
 #ifdef WITH_OPENSSL
     case 'c':
       {
-	if (rsa != NULL) {
-	  RSA_free(rsa);
-	  rsa = NULL;
-	}
+        if (rsa != NULL) {
+          RSA_free(rsa);
+          rsa = NULL;
+        }
 
-	FILE *f = NULL;
-	if (!(f = fopen(optarg, "r"))) {
-	  fprintf(stderr,
-		  "Could not open private key %s\n",
-		  optarg);
-	  retval = EXIT_FAILURE;
-	  goto exit;
-	}
+        FILE *f = NULL;
+        if (!(f = fopen(optarg, "r"))) {
+          fprintf(stderr,
+                  "Could not open private key %s\n",
+                  optarg);
+          retval = EXIT_FAILURE;
+          goto exit;
+        }
 
-	if (!(rsa = PEM_read_RSAPrivateKey(f, NULL, NULL, NULL))) {
-	  fprintf(stderr,
-		  "Could not read private key %s\n",
-		  optarg);
-	  fclose(f);
-	  retval = EXIT_FAILURE;
-	  goto exit;
-	}
+        if (!(rsa = PEM_read_RSAPrivateKey(f, NULL, NULL, NULL))) {
+          fprintf(stderr,
+                  "Could not read private key %s\n",
+                  optarg);
+          fclose(f);
+          retval = EXIT_FAILURE;
+          goto exit;
+        }
 
-	fclose(f);
+        fclose(f);
 
-	OpenSSL_add_all_digests();
-	break;
+        OpenSSL_add_all_digests();
+        break;
       }
 #endif /* WITH_OPENSSL */
 
 #ifdef DEBUG_PLOSS
     case 'P':
       {
-	static struct timeval tv;
-	gettimeofday(&tv, NULL);
-	srandom(tv.tv_sec);
-	ploss_rate = atoi(optarg);
-	break;
+        static struct timeval tv;
+        gettimeofday(&tv, NULL);
+        srandom(tv.tv_sec);
+        ploss_rate = atoi(optarg);
+        break;
       }
 #endif /* DEBUG_PLOSS */
 

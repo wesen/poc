@@ -17,12 +17,12 @@
 #ifdef DEBUG
 void vorbis_stream_print(vorbis_stream_t *vorbis) {
   fprintf(stderr, "audio channels: %d, sample_rate: %lu\n",
-	  vorbis->audio_channels, vorbis->audio_sample_rate);
+          vorbis->audio_channels, vorbis->audio_sample_rate);
   fprintf(stderr, "bitrate max: %lu, nominal: %lu, min: %lu\n",
-	  vorbis->bitrate_maximum, vorbis->bitrate_nominal,
-	  vorbis->bitrate_minimum);
+          vorbis->bitrate_maximum, vorbis->bitrate_nominal,
+          vorbis->bitrate_minimum);
   fprintf(stderr, "blocksize 0: %d, blocksize 1: %d\n",
-	  vorbis->blocksize_0, vorbis->blocksize_1);
+          vorbis->blocksize_0, vorbis->blocksize_1);
 }
 #endif /* DEBUG */
 
@@ -66,11 +66,11 @@ int vorbis_unpack_id_hdr(vorbis_stream_t *vorbis) {
   \verb|vorbis->segment|, and append it to the buffer \verb|packet|.
 **/
 int vorbis_packet_in_page(vorbis_stream_t *vorbis, ogg_page_t *page,
-			  buf_t *packet) {
+                          buf_t *packet) {
   for (; vorbis->segment < page->page_segments; vorbis->segment++) {
     if (page->lacing_values[vorbis->segment] > 0) {
       buf_append(packet, ogg_segment(page, vorbis->segment),
-		 page->lacing_values[vorbis->segment]);
+                 page->lacing_values[vorbis->segment]);
     }
     if (page->lacing_values[vorbis->segment] < 255) {
       vorbis->segment++;
@@ -154,14 +154,14 @@ int vorbis_stream_read_hdrs(vorbis_stream_t *vorbis) {
   vorbis->segment = 0;
   while (i < VORBIS_MAX_HDR_PAGES) {
     if (!vorbis_packet_in_page(vorbis, vorbis->hdr_pages + i,
-			       &vorbis->comment_hdr)) {
+                               &vorbis->comment_hdr)) {
       i++;
       if (!ogg_next_page(&vorbis->file, vorbis->hdr_pages + i))
-	return 0;
+        return 0;
       vorbis->segment = 0;
     } else {
       if (!vorbis_check_packet(&vorbis->comment_hdr, 3))
-	return 0;
+        return 0;
       break;
     }
   }
@@ -171,17 +171,17 @@ int vorbis_stream_read_hdrs(vorbis_stream_t *vorbis) {
 
   while (i < VORBIS_MAX_HDR_PAGES) {
     if (!vorbis_packet_in_page(vorbis, vorbis->hdr_pages + i,
-			       &vorbis->setup_hdr)) {
+                               &vorbis->setup_hdr)) {
       i++;
       if (!ogg_next_page(&vorbis->file, vorbis->hdr_pages + i))
-	return 0;
+        return 0;
       vorbis->segment = 0;      
     } else {
       if (!vorbis_check_packet(&vorbis->setup_hdr, 5))
-	return 0;
+        return 0;
       /* must be the last segment in packet */
       if (vorbis->segment < (vorbis->hdr_pages[i].page_segments))
-	return 0;
+        return 0;
       break;
     }
   }

@@ -54,8 +54,8 @@ int net_ip4_resolve_hostname(const char *hostname,
   Returns the filedescriptor of the socket, or -1 on error.
 **/
 static int net_udp4_socket(struct sockaddr_in *saddr,
-			   unsigned short port,
-			   unsigned char ttl) {
+                           unsigned short port,
+                           unsigned char ttl) {
   assert(saddr != NULL);
   
   /*M
@@ -86,13 +86,13 @@ static int net_udp4_socket(struct sockaddr_in *saddr,
   if (IN_MULTICAST(htonl(saddr->sin_addr.s_addr))) {
     unsigned char loop = 1;
     if ((setsockopt(msock,
-		    IPPROTO_IP,
-		    IP_MULTICAST_TTL,
-		    &ttl, sizeof(ttl)) < 0) ||
-	(setsockopt(msock,
-		    IPPROTO_IP,
-		    IP_MULTICAST_LOOP,
-		    &loop, sizeof(loop)) < 0)) {
+                    IPPROTO_IP,
+                    IP_MULTICAST_TTL,
+                    &ttl, sizeof(ttl)) < 0) ||
+        (setsockopt(msock,
+                    IPPROTO_IP,
+                    IP_MULTICAST_LOOP,
+                    &loop, sizeof(loop)) < 0)) {
       perror("setsockopt");
       goto error;
     }
@@ -113,8 +113,8 @@ static int net_udp4_socket(struct sockaddr_in *saddr,
   filedescriptor of the socket, or -1 on error.
 **/
 int net_udp4_send_socket(char *hostname,
-			 unsigned short port,
-			 unsigned char ttl) {
+                         unsigned short port,
+                         unsigned char ttl) {
   struct sockaddr_in saddr;
   if (!net_ip4_resolve_hostname(hostname, port, NULL, &saddr))
     return -1;
@@ -150,7 +150,7 @@ int net_udp4_send_socket(char *hostname,
   filedescriptor of the socket, or -1 on error.
 **/
 int net_udp4_recv_socket(char *hostname,
-			unsigned short port) {
+                         unsigned short port) {
   struct sockaddr_in addr;
   if (!net_ip4_resolve_hostname(hostname, port, NULL, &addr))
     memset(&addr.sin_addr, 0, sizeof(addr.sin_addr));
@@ -179,9 +179,9 @@ int net_udp4_recv_socket(char *hostname,
     mreq.imr_interface.s_addr = htonl(INADDR_ANY);
 
     if (setsockopt(msock,
-		   IPPROTO_IP,
-		   IP_ADD_MEMBERSHIP,
-		   &mreq, sizeof(mreq)) < 0) {
+                   IPPROTO_IP,
+                   IP_ADD_MEMBERSHIP,
+                   &mreq, sizeof(mreq)) < 0) {
       perror("setsockopt");
       goto error;
     }
@@ -236,8 +236,8 @@ int net_tcp4_bind(int s, unsigned char ip[4], unsigned short port) {
 }
 
 int net_tcp4_bind_reuse(int s,
-			unsigned char ip[4],
-			unsigned short port) {
+                        unsigned char ip[4],
+                        unsigned short port) {
   int opt = 1;
   setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
   return net_tcp4_bind(s, ip, port);
@@ -259,8 +259,8 @@ int net_tcp4_listen_socket(char *hostname, unsigned short port) {
 }
 
 int net_tcp4_accept_socket(int s,
-			   unsigned char ip[4],
-			   unsigned short *port) {
+                           unsigned char ip[4],
+                           unsigned short *port) {
   struct sockaddr_in sa;
   int len = sizeof(sa);
   int fd;

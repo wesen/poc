@@ -102,7 +102,7 @@ int pob_insert_pkt(rtp_pkt_t *pkt) {
 #ifdef WITH_OPENSSL
   if (rsa) {
     if ((pkt->b.pt != RTP_PT_SMPA) ||
-	!rtp_pkt_verify(pkt, rsa)) {
+        !rtp_pkt_verify(pkt, rsa)) {
       pob_stats.sign_pkts++;
       return 0;
     }
@@ -222,11 +222,11 @@ int pob_mainloop(int sock, int quiet) {
 
     default:
       /*M
-	Insert new packet into the buffering list.
+        Insert new packet into the buffering list.
       **/
       if (!pob_insert_pkt(&pkt)) {
-	retval = 0;
-	goto exit;
+        retval = 0;
+        goto exit;
       }
     }
 
@@ -240,25 +240,25 @@ int pob_mainloop(int sock, int quiet) {
     
     if (prebuffering == 1) {
       if (rtp_rb_cnt >= (rtp_rb_size / 2)) {
-	rtp_pkt_t *firstpkt = rtp_rb_first();
-	assert(firstpkt != NULL);
-	assert(firstpkt->length != 0);
-	
-	tstamp_last = firstpkt->timestamp;
-	time_last = time_now;
-	
-	prebuffering = 0;
-	if (!quiet)
-	  fprintf(stderr, "\n");
+        rtp_pkt_t *firstpkt = rtp_rb_first();
+        assert(firstpkt != NULL);
+        assert(firstpkt->length != 0);
+        
+        tstamp_last = firstpkt->timestamp;
+        time_last = time_now;
+        
+        prebuffering = 0;
+        if (!quiet)
+          fprintf(stderr, "\n");
       } else {
-	/*M
-	  Print prebuffering information.
-	**/
-	if (!quiet)
-	  fprintf(stderr, "Prebuffering: %.2f%%\r",
-		  (float)rtp_rb_cnt / (rtp_rb_size / 2.0) * 100.0);
+        /*M
+          Print prebuffering information.
+        **/
+        if (!quiet)
+          fprintf(stderr, "Prebuffering: %.2f%%\r",
+                  (float)rtp_rb_cnt / (rtp_rb_size / 2.0) * 100.0);
 
-	continue;
+        continue;
       }
     }
     
@@ -288,60 +288,60 @@ int pob_mainloop(int sock, int quiet) {
       assert(pkt != NULL);
 
       if (pkt->length != 0) {
-	/* boeser hack XXX */
-	if (pkt->timestamp > (tstamp_now + 3000))
-	  break;
-	
-	/*M
-	  Unpack ADU and insert into ADU queue.
-	**/
-	unsigned char *ptr = pkt->data + pkt->hlen;
-	if (pkt->length > ((1 << 6) - 1))
-	  ptr++;
-	
-	adu_t adu;
-	memcpy(adu.raw, ptr, pkt->length);
-	if (!mp3_unpack(&adu)) {
-	  fprintf(stderr, "Error unpacking the mp3 adu\n");
-	  
-	  pkt->length = 0;
-	  rtp_rb_cnt--;
-	  
-	  retval = 0;
-	  goto exit;
-	}
+        /* boeser hack XXX */
+        if (pkt->timestamp > (tstamp_now + 3000))
+          break;
+        
+        /*M
+          Unpack ADU and insert into ADU queue.
+        **/
+        unsigned char *ptr = pkt->data + pkt->hlen;
+        if (pkt->length > ((1 << 6) - 1))
+          ptr++;
+        
+        adu_t adu;
+        memcpy(adu.raw, ptr, pkt->length);
+        if (!mp3_unpack(&adu)) {
+          fprintf(stderr, "Error unpacking the mp3 adu\n");
+          
+          pkt->length = 0;
+          rtp_rb_cnt--;
+          
+          retval = 0;
+          goto exit;
+        }
 
-	if (aq_add_adu(&frame_queue, &adu)) {
-	  /*M
-	    If a frame could be generated, write it out to standard out.
-	  **/
-	  mp3_frame_t *frame = aq_get_frame(&frame_queue);
-	  assert(frame != NULL);
-	  memset(frame->raw, 0, 4 + frame->si_size);
-	  
-	  /*M
-	    Write packet payload.
-	  **/
-	  if (!mp3_fill_hdr(frame) ||
-	      !mp3_fill_si(frame) ||
-	      (write(STDOUT_FILENO,
-		     frame->raw,
-		     frame->frame_size) < (int)frame->frame_size)) {
-	    fprintf(stderr, "Error writing to stdout\n");
-	    free(frame);
-	    
-	    pkt->length = 0;
-	    rtp_rb_cnt--;
-	    
-	    retval = 0;
-	    goto exit;
-	  }
-	  
-	  time_last = time_now;
-	  tstamp_last = tstamp_now;
-	  
-	  free(frame);
-	}
+        if (aq_add_adu(&frame_queue, &adu)) {
+          /*M
+            If a frame could be generated, write it out to standard out.
+          **/
+          mp3_frame_t *frame = aq_get_frame(&frame_queue);
+          assert(frame != NULL);
+          memset(frame->raw, 0, 4 + frame->si_size);
+          
+          /*M
+            Write packet payload.
+          **/
+          if (!mp3_fill_hdr(frame) ||
+              !mp3_fill_si(frame) ||
+              (write(STDOUT_FILENO,
+                     frame->raw,
+                     frame->frame_size) < (int)frame->frame_size)) {
+            fprintf(stderr, "Error writing to stdout\n");
+            free(frame);
+            
+            pkt->length = 0;
+            rtp_rb_cnt--;
+            
+            retval = 0;
+            goto exit;
+          }
+          
+          time_last = time_now;
+          tstamp_last = tstamp_now;
+          
+          free(frame);
+        }
       }
       
       rtp_rb_pop();

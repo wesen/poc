@@ -27,8 +27,8 @@
   Returns the filedescriptor of the socket, or -1 on error.
 **/
 static int net_udp6_socket(struct sockaddr_in6 *saddr,
-			   unsigned short port,
-			   unsigned int hops) {
+                           unsigned short port,
+                           unsigned int hops) {
   assert(saddr != NULL);
   
   /*M
@@ -59,13 +59,13 @@ static int net_udp6_socket(struct sockaddr_in6 *saddr,
   if (IN6_IS_ADDR_MULTICAST(&saddr->sin6_addr)) {
     unsigned int loop = 1;
     if ((setsockopt(msock,
-		    IPPROTO_IPV6,
-		    IPV6_MULTICAST_HOPS,
-		    &hops, sizeof(hops)) < 0) ||
-	(setsockopt(msock,
-		    IPPROTO_IPV6,
-		    IPV6_MULTICAST_LOOP,
-		    &loop, sizeof(loop)) < 0)) {
+                    IPPROTO_IPV6,
+                    IPV6_MULTICAST_HOPS,
+                    &hops, sizeof(hops)) < 0) ||
+        (setsockopt(msock,
+                    IPPROTO_IPV6,
+                    IPV6_MULTICAST_LOOP,
+                    &loop, sizeof(loop)) < 0)) {
       perror("setsockopt");
       goto error;
     }
@@ -86,8 +86,8 @@ static int net_udp6_socket(struct sockaddr_in6 *saddr,
   filedescriptor of the socket, or -1 on error.
 **/
 int net_udp6_send_socket(char *hostname,
-			 unsigned short port,
-			 unsigned int hops) {
+                         unsigned short port,
+                         unsigned int hops) {
   /*M
     Get hostname address.
   **/
@@ -134,7 +134,7 @@ int net_udp6_send_socket(char *hostname,
   filedescriptor of the socket, or -1 on error.
 **/
 int net_udp6_recv_socket(char *hostname,
-			 unsigned short port) {
+                         unsigned short port) {
   /*M
     Get hostname address.
   **/
@@ -171,14 +171,14 @@ int net_udp6_recv_socket(char *hostname,
   if (IN6_IS_ADDR_MULTICAST(&addr.sin6_addr)) {
     struct ipv6_mreq mreq;
     memcpy(&mreq.ipv6mr_multiaddr,
-	   &addr.sin6_addr,
-	   sizeof(addr.sin6_addr));
+           &addr.sin6_addr,
+           sizeof(addr.sin6_addr));
     mreq.ipv6mr_interface = 0;
 
     if (setsockopt(msock,
-		   IPPROTO_IPV6,
-		   IPV6_JOIN_GROUP,
-		   &mreq, sizeof(mreq)) < 0) {
+                   IPPROTO_IPV6,
+                   IPV6_JOIN_GROUP,
+                   &mreq, sizeof(mreq)) < 0) {
       perror("setsockopt");
       goto error;
     }
@@ -234,8 +234,8 @@ int net_tcp6_bind(int s, unsigned char ip[16], unsigned short port) {
 }
 
 int net_tcp6_bind_reuse(int s,
-			unsigned char ip[16],
-			unsigned short port) {
+                        unsigned char ip[16],
+                        unsigned short port) {
   int opt = 1;
   setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
   return net_tcp6_bind(s, ip, port);
@@ -267,8 +267,8 @@ int net_tcp6_listen_socket(char *hostname, unsigned short port) {
 }
 
 int net_tcp6_accept_socket(int s,
-			   unsigned char ip[16],
-			   unsigned short *port) {
+                           unsigned char ip[16],
+                           unsigned short *port) {
   struct sockaddr_in6 sa;
   int len = sizeof(sa);
   int fd;

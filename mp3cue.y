@@ -122,13 +122,13 @@ trackisrc: ISRC STRING
 
 tracktitle: TITLE STRING {
   strncpy(yymp3_cue_file->tracks[yymp3_cue_file->track_number].title,
-	  $2, MP3CUE_MAX_STRING_LENGTH);
+          $2, MP3CUE_MAX_STRING_LENGTH);
 }
 ;
 
 trackperformer: PERFORMER STRING  {
   strncpy(yymp3_cue_file->tracks[yymp3_cue_file->track_number].performer,
-	  $2, MP3CUE_MAX_STRING_LENGTH);
+          $2, MP3CUE_MAX_STRING_LENGTH);
 }
 ;
 

@@ -29,7 +29,7 @@ int mp3_read_huffman(mp3_frame_t *frame) {
       unsigned int bit0 = granule_offset & 7;
       bv_t bv;
       bv_init(&bv, mp3_frame_data_begin(frame) + (granule_offset >> 3),
-	      gr->part3_length + bit0);
+              gr->part3_length + bit0);
     }
 
 }

@@ -30,15 +30,15 @@ int file_read(file_t *file, unsigned char *buf, size_t size) {
   while ((i = read(file->fd, buf + len, (size_t)(size - len))) != 0) {
     if (i < 0) {
       if (errno == EINTR)
-	continue;
+        continue;
       else {
-	perror("read");
-	return -1;
+        perror("read");
+        return -1;
       }
     } else {
       len += i;
       if (len == size)
-	break;
+        break;
     }
   }
   
@@ -104,15 +104,15 @@ int file_write(file_t *file, unsigned char *buf, size_t size) {
   while ((i = write(file->fd, buf + len, size - len))) {
     if (i < 0) {
       if (errno == EINTR)
-	continue;
+        continue;
       else {
-	perror("write");
-	return -1;
+        perror("write");
+        return -1;
       }
     } else {
       len += i;
       if (len == size)
-	break;
+        break;
     }
   }
 
@@ -134,7 +134,7 @@ int file_open_write(file_t *file, char *filename) {
     file->fd = STDOUT_FILENO;
   else {
     file->fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC,
-		    S_IRWXU | S_IRGRP | S_IROTH);
+                    S_IRWXU | S_IRGRP | S_IROTH);
 
     if (file->fd < 0) {
       perror("open");

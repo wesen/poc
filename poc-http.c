@@ -97,14 +97,14 @@ int poc_mainloop(http_server_t *server, char *filename, int quiet) {
     for (i = 0; i < server->num_clients; i++) {
       if ((server->clients[i].fd != -1) &&
           (server->clients[i].found >= 2)) {
-	int ret;
-	
-	ret = write(server->clients[i].fd, frame.raw, frame.frame_size);
-	
-	if (ret != frame.frame_size) {
-	  fprintf(stderr, "Error writing to client %d\n", i);
-	  http_client_close(server, server->clients + i);
-	}
+        int ret;
+        
+        ret = write(server->clients[i].fd, frame.raw, frame.frame_size);
+        
+        if (ret != frame.frame_size) {
+          fprintf(stderr, "Error writing to client %d\n", i);
+          http_client_close(server, server->clients + i);
+        }
       }
     }
     frame_time += frame.usec;
@@ -222,7 +222,7 @@ int main(int argc, char *argv[]) {
        
      case 's':
        if (address != NULL)
-	 free(address);
+         free(address);
 
        address = strdup(optarg);
        break;

@@ -132,8 +132,8 @@ void http_bad_request(http_client_t *client,
    int len;
 
    len = snprintf(buf, 256,
-		  "HTTP/1.0 %lu %s\r\nConnection: close\r\n\r\n%s\r\n", 
-		  code, comment, msg);
+                  "HTTP/1.0 %lu %s\r\nConnection: close\r\n\r\n%s\r\n", 
+                  code, comment, msg);
    write(client->fd, buf, len);
 }
 

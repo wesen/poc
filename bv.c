@@ -76,10 +76,10 @@ unsigned long bv_get_bits(bv_t *bv, unsigned int numbits) {
   assert(bv != NULL);
   assert(bv->data != NULL);
   assert((numbits <= 32) ||
-	 "Can not read more than 32 bits from a bit vector");
+         "Can not read more than 32 bits from a bit vector");
   assert(bv->len > bv->idx);
   assert(((bv->len - bv->idx) > numbits) ||
-	 "Bit buffer of bit vector is too small");
+         "Bit buffer of bit vector is too small");
 
   unsigned int cidx = bv->idx >> 3;      /* char index */
   /*M
@@ -127,7 +127,7 @@ int bv_put_bits(bv_t *bv, unsigned long bits, unsigned int numbits) {
   assert(bv->data != NULL);
   assert(bv->len > bv->idx);
   assert((numbits <= 32) ||
-	 "Can not write more than 32 bits into a bit vector");
+         "Can not write more than 32 bits into a bit vector");
 
   if (numbits > (bv->len - bv->idx))
     return 0;
@@ -179,7 +179,7 @@ void testit(char *name, int result, int should) {
     printf("Test %s was successful\n", name);
   } else {
     printf("Test %s was not successful, %x should have been %x\n",
-	   name, result, should);
+           name, result, should);
   }
 }
 

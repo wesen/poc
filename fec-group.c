@@ -17,11 +17,11 @@
   \emph{Initialize a FEC group structure to hold incoming packets.}
 **/
 void fec_group_init(fec_group_t *group,
-			unsigned char fec_k,
-			unsigned char fec_n,
-			unsigned char seq,
-			unsigned long tstamp,
-			unsigned short fec_len) {
+                    unsigned char fec_k,
+                    unsigned char fec_n,
+                    unsigned char seq,
+                    unsigned long tstamp,
+                    unsigned short fec_len) {
   assert(group != NULL);
   
   group->fec_k = fec_k;
@@ -82,10 +82,10 @@ void fec_group_print(fec_group_t *group) {
   
   fprintf(stderr, "Group %p tstamp: %lu\n", group, group->tstamp);
   fprintf(stderr, "k: %d, n: %d, len: %u\n",
-	  group->fec_k, group->fec_n, group->fec_len);
+          group->fec_k, group->fec_n, group->fec_len);
   
   fprintf(stderr, "received packets: %u/%u\n",
-	  group->rcvd_pkts, group->fec_k);
+          group->rcvd_pkts, group->fec_k);
 
   int i;
   for (i = 0; i < group->fec_n; i++) {
@@ -145,10 +145,10 @@ int fec_group_decode(fec_group_t *group, aq_t *aq) {
     int i, j;
     for (i = 0, j = 0; i < group->fec_n; i++) {
       if (group->pkts[i] == 1) {
-	idxs[j] = i;
-	j++;
-	if (j == group->fec_k)
-	  break;
+        idxs[j] = i;
+        j++;
+        if (j == group->fec_k)
+          break;
       }
     }
 
@@ -177,12 +177,12 @@ int fec_group_decode(fec_group_t *group, aq_t *aq) {
     for (i = 0; i < group->fec_k; i++) {
       adu_t adu;
       memcpy(adu.raw,
-	     group->buf + i * group->fec_len,
-	     group->fec_len);
+             group->buf + i * group->fec_len,
+             group->fec_len);
       
       if (!mp3_unpack(&adu)) {
-	fprintf(stderr, "Error unpacking the mp3 adu\n");
-	return 0;
+        fprintf(stderr, "Error unpacking the mp3 adu\n");
+        return 0;
       }
       
       aq_add_adu(aq, &adu);
@@ -196,17 +196,17 @@ int fec_group_decode(fec_group_t *group, aq_t *aq) {
     int i;
     for (i = 0; i < group->fec_k; i++) {
       if (group->pkts[i] == 1) {
-	adu_t adu;
-	memcpy(adu.raw,
-	       group->buf + i * group->fec_len,
-	       group->fec_len);
+        adu_t adu;
+        memcpy(adu.raw,
+               group->buf + i * group->fec_len,
+               group->fec_len);
 
-	if (!mp3_unpack(&adu)) {
-	  fprintf(stderr, "Error unpacking the mp3 adu\n");
-	  return 0;
-	}
+        if (!mp3_unpack(&adu)) {
+          fprintf(stderr, "Error unpacking the mp3 adu\n");
+          return 0;
+        }
 
-	aq_add_adu(aq, &adu);
+        aq_add_adu(aq, &adu);
       }
     }
   }
@@ -272,112 +272,112 @@ int main(int argc, char *argv[]) {
       /* check if the FEC group is complete */
       if (++cnt == fec_k) {
 
-	unsigned int max_len = 0;
-	unsigned long group_duration = 0;
+        unsigned int max_len = 0;
+        unsigned long group_duration = 0;
 
-	int i;
-	for (i = 0; i < fec_k; i++) {
-	  unsigned int adu_len = mp3_frame_size(in_adus[i]);
-	    + (in_adus[i]->protected ? 0 : 2)
-	    + in_adus[i]->si_size
-	    + in_adus[i]->adu_size;
+        int i;
+        for (i = 0; i < fec_k; i++) {
+          unsigned int adu_len = mp3_frame_size(in_adus[i]);
+            + (in_adus[i]->protected ? 0 : 2)
+            + in_adus[i]->si_size
+            + in_adus[i]->adu_size;
 
-	  if (adu_len > max_len)
-	    max_len = adu_len;
+          if (adu_len > max_len)
+            max_len = adu_len;
 
-	  group_duration += in_adus[i]->usec;
-	}
+          group_duration += in_adus[i]->usec;
+        }
 #if 0
 
-	fec_time += group_duration;
+        fec_time += group_duration;
 
-	assert(max_len < FEC_PKT_PAYLOAD_SIZE);
+        assert(max_len < FEC_PKT_PAYLOAD_SIZE);
 
-	unsigned char *in_ptrs[fec_k];
-	unsigned char buf[fec_k * max_len];
-	unsigned char *ptr = buf;
-	for (i = 0; i < fec_k; i++) {
-	  unsigned int adu_len = mp3_frame_size(in_adus[i]);
+        unsigned char *in_ptrs[fec_k];
+        unsigned char buf[fec_k * max_len];
+        unsigned char *ptr = buf;
+        for (i = 0; i < fec_k; i++) {
+          unsigned int adu_len = mp3_frame_size(in_adus[i]);
 
-	  in_ptrs[i] = ptr;
-	  memcpy(ptr, in_adus[i]->raw, adu_len);
-	  if (adu_len < max_len)
-	    memset(ptr + adu_len, 0, max_len - adu_len);
-	  ptr += max_len;
-	}
+          in_ptrs[i] = ptr;
+          memcpy(ptr, in_adus[i]->raw, adu_len);
+          if (adu_len < max_len)
+            memset(ptr + adu_len, 0, max_len - adu_len);
+          ptr += max_len;
+        }
 
-	fec_group_t group;
-	fec_group_init(&group, fec_k, fec_n, 0, 0, max_len);
-	memset(group.buf, 0, fec_n * max_len);
+        fec_group_t group;
+        fec_group_init(&group, fec_k, fec_n, 0, 0, max_len);
+        memset(group.buf, 0, fec_n * max_len);
 
-	group.tstamp = fec_time;
+        group.tstamp = fec_time;
 
-	for (i = 0; i < fec_n; i++) {
-	  fec_pkt_t pkt;
-	  fec_pkt_init(&pkt);
+        for (i = 0; i < fec_n; i++) {
+          fec_pkt_t pkt;
+          fec_pkt_init(&pkt);
 
-	  pkt.hdr.packet_seq = i;
-	  pkt.hdr.fec_k = fec_k;
-	  pkt.hdr.fec_n = fec_n;
-	  pkt.hdr.fec_len = max_len + 2;
-	  pkt.hdr.group_tstamp = fec_time;
-	  
-	  fec_encode(fec, in_ptrs, pkt.payload, i, max_len);
+          pkt.hdr.packet_seq = i;
+          pkt.hdr.fec_k = fec_k;
+          pkt.hdr.fec_n = fec_n;
+          pkt.hdr.fec_len = max_len + 2;
+          pkt.hdr.group_tstamp = fec_time;
+          
+          fec_encode(fec, in_ptrs, pkt.payload, i, max_len);
 
-	  if (i < fec_k) {
-	    pkt.hdr.len = mp3_frame_size(in_adus[i]);
-	  } else {
-	    pkt.hdr.len = max_len;
-	  }
+          if (i < fec_k) {
+            pkt.hdr.len = mp3_frame_size(in_adus[i]);
+          } else {
+            pkt.hdr.len = max_len;
+          }
 
-	  fec_group_insert_pkt(&group, &pkt);
-	}
+          fec_group_insert_pkt(&group, &pkt);
+        }
 
-	if (!fec_group_decode(&group, &qout)) {
-	  fprintf(stderr, "Could not decode group\n");
-	  return 1;
-	}
+        if (!fec_group_decode(&group, &qout)) {
+          fprintf(stderr, "Could not decode group\n");
+          return 1;
+        }
 
-	fec_group_destroy(&group);
+        fec_group_destroy(&group);
 #endif
 
-	for (i = 0; i < fec_k; i++) {
-	  adu_t adu;
-	  memcpy(adu.raw,
-		 in_adus[i]->raw,
-		 max_len);
-	  
-	  if (!mp3_unpack(&adu)) {
-	    fprintf(stderr, "Error unpacking the mp3 adu\n");
-	    return 0;
-	  }
-	  
-	  aq_add_adu(&qout, &adu);
-	}
+        for (i = 0; i < fec_k; i++) {
+          adu_t adu;
+          memcpy(adu.raw,
+                 in_adus[i]->raw,
+                 max_len);
+          
+          if (!mp3_unpack(&adu)) {
+            fprintf(stderr, "Error unpacking the mp3 adu\n");
+            return 0;
+          }
+          
+          aq_add_adu(&qout, &adu);
+        }
 
-	mp3_frame_t *frame_out;
-	while ((frame_out = aq_get_frame(&qout)) != NULL) {
-	  memset(frame_out->raw, 0, 4 + frame_out->si_size);
-	  
-	  /*M
-	    Write packet payload.
-	  **/
-	  if (!mp3_fill_hdr(frame_out) ||
-	      !mp3_fill_si(frame_out) ||
-	      (mp3_write_frame(&out, frame_out) <= 0)) {
-	    fprintf(stderr, "Error writing to stdout\n");
-	    free(frame_out);
-	    
-	    return 0;
-	  }
-	  
-	  free(frame_out);
-	}
+        mp3_frame_t *frame_out;
+        while ((frame_out = aq_get_frame(&qout)) != NULL) {
+          memset(frame_out->raw, 0, 4 + frame_out->si_size);
+          
+          /*M
+            Write packet payload.
+          **/
+          if (!mp3_fill_hdr(frame_out) ||
+              !mp3_fill_si(frame_out) ||
+              (mp3_write_frame(&out, frame_out) <= 0)) {
+            fprintf(stderr, "Error writing to stdout\n");
+            free(frame_out);
+            
+            return 0;
+          }
+          
+          free(frame_out);
+        }
 
-	for (i = 0; i < fec_k; i++)
-	  free(in_adus[i]);
+        for (i = 0; i < fec_k; i++)
+          free(in_adus[i]);
 
-	cnt = 0;
+        cnt = 0;
       }
     }
 

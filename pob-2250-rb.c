@@ -101,7 +101,7 @@ int pob_insert_pkt(rtp_pkt_t *pkt) {
 #ifdef WITH_OPENSSL
   if (rsa) {
     if ((pkt->b.pt != RTP_PT_SMPA) ||
-	!rtp_pkt_verify(pkt, rsa)) {
+        !rtp_pkt_verify(pkt, rsa)) {
       pob_stats.sign_pkts++;
       return 0;
     }
@@ -207,15 +207,15 @@ int pob_mainloop(int sock, int quiet) {
 
     default:
       /*M
-	Insert new packet into the buffering list.
+        Insert new packet into the buffering list.
       **/
       switch (pob_insert_pkt(&pkt)) {
       case -1:
-	retval = 0;
-	goto exit;
-	
+        retval = 0;
+        goto exit;
+        
       default:
-	break;
+        break;
       }
       
       break;
@@ -231,25 +231,25 @@ int pob_mainloop(int sock, int quiet) {
     
     if (prebuffering == 1) {
       if (rtp_rb_cnt >= (rtp_rb_size / 2)) {
-	rtp_pkt_t *firstpkt = rtp_rb_first();
-	assert(firstpkt != NULL);
-	assert(firstpkt->length != 0);
-	
-	tstamp_last = firstpkt->timestamp;
-	time_last = time_now;
-	
-	prebuffering = 0;
-	if (!quiet)
-	  fprintf(stderr, "\n");
+        rtp_pkt_t *firstpkt = rtp_rb_first();
+        assert(firstpkt != NULL);
+        assert(firstpkt->length != 0);
+        
+        tstamp_last = firstpkt->timestamp;
+        time_last = time_now;
+        
+        prebuffering = 0;
+        if (!quiet)
+          fprintf(stderr, "\n");
       } else {
-	/*M
-	  Print prebuffering information.
-	**/
-	if (!quiet)
-	  fprintf(stderr, "Prebuffering: %.2f%%\r",
-		  (float)rtp_rb_cnt / (rtp_rb_size / 2.0) * 100.0);
+        /*M
+          Print prebuffering information.
+        **/
+        if (!quiet)
+          fprintf(stderr, "Prebuffering: %.2f%%\r",
+                  (float)rtp_rb_cnt / (rtp_rb_size / 2.0) * 100.0);
 
-	continue;
+        continue;
       }
     }
     
@@ -279,16 +279,16 @@ int pob_mainloop(int sock, int quiet) {
       assert(pkt != NULL);
 
       if (pkt->length != 0) {
-	/* boeser hack XXX */
-	if (pkt->timestamp > (tstamp_now + 3000))
-	  break;
+        /* boeser hack XXX */
+        if (pkt->timestamp > (tstamp_now + 3000))
+          break;
 
-	if (write(STDOUT_FILENO, pkt->data + pkt->hlen,
-		  pkt->length) < (int)pkt->length) {
-	  fprintf(stderr, "Error writing to stdout\n");
-	  retval = 0;
-	  goto exit;
-	}
+        if (write(STDOUT_FILENO, pkt->data + pkt->hlen,
+                  pkt->length) < (int)pkt->length) {
+          fprintf(stderr, "Error writing to stdout\n");
+          retval = 0;
+          goto exit;
+        }
       }
       
       rtp_rb_pop();
@@ -339,11 +339,11 @@ int main(int argc, char *argv[]) {
 #ifdef WITH_OPENSSL
     "c:"
 #endif
-		     )) >= 0) {      
+          )) >= 0) {      
     switch (c) {
     case 's':
       if (address != NULL)
-	free(address);
+        free(address);
 
       address = strdup(optarg);
       break;
@@ -361,46 +361,46 @@ int main(int argc, char *argv[]) {
       break;
 
       /*M
-	If Openssl is used, read in the RSA certificate.
+        If Openssl is used, read in the RSA certificate.
       **/
 #ifdef WITH_OPENSSL
     case 'c':
       {
-	FILE *f;
+        FILE *f;
 
-	if (x509) {
-	  X509_free(x509);
-	  x509 = NULL;
-	}
-	if (pkey) {
-	  EVP_PKEY_free(pkey);
-	  pkey = NULL;
-	  rsa = NULL;
-	}
+        if (x509) {
+          X509_free(x509);
+          x509 = NULL;
+        }
+        if (pkey) {
+          EVP_PKEY_free(pkey);
+          pkey = NULL;
+          rsa = NULL;
+        }
 
-	if (!(f = fopen(optarg, "r")) ||
-	    !PEM_read_X509(f, &x509, NULL, NULL) ||
-	    !(pkey = X509_get_pubkey(x509))) {
-	  fprintf(stderr,
-		  "Could not read certificate %s\n",
-		  optarg);
-	  if (f)
-	    fclose(f);
-	  retval = EXIT_FAILURE;
-	  goto exit;
-	}
+        if (!(f = fopen(optarg, "r")) ||
+            !PEM_read_X509(f, &x509, NULL, NULL) ||
+            !(pkey = X509_get_pubkey(x509))) {
+          fprintf(stderr,
+                  "Could not read certificate %s\n",
+                  optarg);
+          if (f)
+            fclose(f);
+          retval = EXIT_FAILURE;
+          goto exit;
+        }
 
-	fclose(f);
+        fclose(f);
 
-	if (pkey->type != EVP_PKEY_RSA) {
-	  fprintf(stderr, "Key is not a RSA key\n");
-	  retval = EXIT_FAILURE;
-	  goto exit;
-	}
+        if (pkey->type != EVP_PKEY_RSA) {
+          fprintf(stderr, "Key is not a RSA key\n");
+          retval = EXIT_FAILURE;
+          goto exit;
+        }
 
-	rsa = pkey->pkey.rsa;
+        rsa = pkey->pkey.rsa;
 
-	break;
+        break;
       }
 #endif
       

@@ -192,12 +192,12 @@ int pob_mainloop(int sock, int quiet) {
       
     default:
       /*M
-	Insert the packet into the FEC buffer.
+        Insert the packet into the FEC buffer.
       **/
       if (!pob_insert_pkt(&pkt)) {
-	finished = 1;
-	retval = -1;
-	goto exit;
+        finished = 1;
+        retval = -1;
+        goto exit;
       }
     }
 
@@ -214,26 +214,26 @@ int pob_mainloop(int sock, int quiet) {
 
     if (prebuffering == 1) {
       if (fec_rb_cnt >= (fec_rb_size / 2)) {
-	fec_group_t *first_group = fec_rb_first();
-	assert(first_group != NULL);
-	assert(first_group->buf != NULL);
+        fec_group_t *first_group = fec_rb_first();
+        assert(first_group != NULL);
+        assert(first_group->buf != NULL);
 
-	tstamp_last = first_group->tstamp;
-	time_last = time_now;
+        tstamp_last = first_group->tstamp;
+        time_last = time_now;
 
-	prebuffering = 0;
-	if (!quiet)
-	  fprintf(stderr, "\n");
+        prebuffering = 0;
+        if (!quiet)
+          fprintf(stderr, "\n");
       } else {
-	/*M
-	  Print prebuffering information.
-	**/
-	if (!quiet)
-	  fprintf(stderr, "Prebuffering: %.2f%%\r",
-		  (float)fec_rb_cnt / (fec_rb_size / 2.0) * 100.0);
-	
-	continue;
-      }	
+        /*M
+          Print prebuffering information.
+        **/
+        if (!quiet)
+          fprintf(stderr, "Prebuffering: %.2f%%\r",
+                  (float)fec_rb_cnt / (fec_rb_size / 2.0) * 100.0);
+        
+        continue;
+      }        
     }
 
     /*M
@@ -262,44 +262,44 @@ int pob_mainloop(int sock, int quiet) {
       assert(group != NULL);
 
       if (group->buf != NULL) {
-	/* boeser hack XXX */
-	if (group->tstamp > (tstamp_now + 3000))
-	  break;
+        /* boeser hack XXX */
+        if (group->tstamp > (tstamp_now + 3000))
+          break;
 
-	/* decode group into adu queue */
-	if (!fec_group_decode(group, &frame_queue)) {
-	  fprintf(stderr, "Could not decode group\n");
-	  /* XXX really continue? */
-	}
+        /* decode group into adu queue */
+        if (!fec_group_decode(group, &frame_queue)) {
+          fprintf(stderr, "Could not decode group\n");
+          /* XXX really continue? */
+        }
 
-	pob_stats.lost_pkts += group->fec_n - group->rcvd_pkts;
-	if (group->rcvd_pkts < group->fec_k)
-	  pob_stats.incomplete_groups++;
+        pob_stats.lost_pkts += group->fec_n - group->rcvd_pkts;
+        if (group->rcvd_pkts < group->fec_k)
+          pob_stats.incomplete_groups++;
 
-	mp3_frame_t *frame;
-	while ((frame = aq_get_frame(&frame_queue)) != NULL) {
-	  memset(frame->raw, 0, 4 + frame->si_size);
-	  
-	  /*M
-	    Write packet payload.
-	  **/
-	  if (!mp3_fill_hdr(frame) ||
-	      !mp3_fill_si(frame) ||
-	      (write(STDOUT_FILENO,
-		     frame->raw,
-		     frame->frame_size) < (int)frame->frame_size)) {
-	    fprintf(stderr, "Error writing to stdout\n");
-	    free(frame);
-	    
-	    retval = 0;
-	    goto exit;
-	  }
+        mp3_frame_t *frame;
+        while ((frame = aq_get_frame(&frame_queue)) != NULL) {
+          memset(frame->raw, 0, 4 + frame->si_size);
+          
+          /*M
+            Write packet payload.
+          **/
+          if (!mp3_fill_hdr(frame) ||
+              !mp3_fill_si(frame) ||
+              (write(STDOUT_FILENO,
+                     frame->raw,
+                     frame->frame_size) < (int)frame->frame_size)) {
+            fprintf(stderr, "Error writing to stdout\n");
+            free(frame);
+            
+            retval = 0;
+            goto exit;
+          }
 
-	  free(frame);
-	}
+          free(frame);
+        }
 
-	tstamp_last = tstamp_now;
-	time_last = time_now;
+        tstamp_last = tstamp_now;
+        time_last = time_now;
       } 
 
       fec_rb_pop();

@@ -456,11 +456,11 @@ static void aq_insert_dummy_adu(aq_t *q, unsigned int backptr) {
   for (i = 0; i < 2; i++)
     for (j = 0; j < 2; j++) {
       dummy->si.channel[i].granule[j].part2_3_length =
-	dummy->si.channel[i].granule[j].big_values = 0;
+      dummy->si.channel[i].granule[j].big_values = 0;
       dummy->si.channel[i].granule[j].scale_comp = 0;
       dummy->si.channel[i].granule[j].tbl_sel[0] = 
-	dummy->si.channel[i].granule[j].tbl_sel[1] =
-	dummy->si.channel[i].granule[j].tbl_sel[2] = 0;
+      dummy->si.channel[i].granule[j].tbl_sel[1] =
+      dummy->si.channel[i].granule[j].tbl_sel[2] = 0;
     }
 
   dummy->adu_size = dummy->adu_bitsize = 0;
@@ -493,8 +493,8 @@ static void aq_insert_dummy_adus(aq_t *q) {
   /* insert the necessary dummy adus */
   int back_ptr = tail->si.main_data_end - prev_adu_end;
   for (; back_ptr > 0;
-       back_ptr -= tail->frame_data_size,
-	 prev_adu_end = 0)
+         back_ptr -= tail->frame_data_size,
+         prev_adu_end = 0)
     aq_insert_dummy_adu(q, prev_adu_end);
 }
 
@@ -518,7 +518,7 @@ static void aq_make_frame(aq_t *q) {
 
 #ifdef DEBUG
   fprintf(stderr, "top adu size: %d, frame size: %d\n",
-	  top->adu_size, top->frame_data_size);
+          top->adu_size, top->frame_data_size);
 #endif
   
   mp3_frame_t frame;
@@ -554,9 +554,9 @@ static void aq_make_frame(aq_t *q) {
       to_offset = 0;
       
       if (data_end < 0)
-	data_length = 0;
+        data_length = 0;
       else
-	data_length = data_end;
+        data_length = data_end;
     } else {
       from_offset = 0;
       to_offset = data_start;
@@ -567,14 +567,14 @@ static void aq_make_frame(aq_t *q) {
       assert(adu->adu_size >= from_offset + data_length);
 #ifdef DEBUG
       fprintf(stderr, 
-	      "memcpy (size: %d) from [%d:%d] to [%d:%d]\n",
-	      adu->adu_size,
-	      from_offset, from_offset + data_length,
-	      to_offset, to_offset + data_length);
+              "memcpy (size: %d) from [%d:%d] to [%d:%d]\n",
+              adu->adu_size,
+              from_offset, from_offset + data_length,
+              to_offset, to_offset + data_length);
 #endif
       memcpy(mp3_frame_data_begin(&frame) + to_offset,
-	     mp3_frame_data_begin(adu) + from_offset,
-	     data_length);
+             mp3_frame_data_begin(adu) + from_offset,
+             data_length);
     }
 
     frames_offset += adu->frame_data_size;
@@ -614,7 +614,7 @@ static int aq_need_adu(aq_t *q) {
 
 #ifdef DEBUG
   fprintf(stderr, "aq_need_adu: data_end: %d, prev_frames_size %u, adu_size %u, main_data_end %u\n",
-	  data_end, prev_frames_size, adu->adu_size, adu->si.main_data_end);
+          data_end, prev_frames_size, adu->adu_size, adu->si.main_data_end);
 #endif
 
   if (data_end >= frame_len)
@@ -728,9 +728,9 @@ int main(int argc, char *argv[]) {
   while (mp3_next_frame(&in, &frame) > 0) {
     static int cin = 0;
     printf("%d in frame_size %ld, backptr %d, adu_size %ld, cksum %ld\n",
-	   cin++,
-	   frame.frame_data_size, frame.si.main_data_end, frame.adu_size,
-	   cksum(frame.raw, frame.frame_size));
+           cin++,
+           frame.frame_data_size, frame.si.main_data_end, frame.adu_size,
+           cksum(frame.raw, frame.frame_size));
     
     if (aq_add_frame(&qin, &frame)) {
       adu_t *adu = aq_get_adu(&qin);
@@ -738,37 +738,37 @@ int main(int argc, char *argv[]) {
 
       static int count = 0;
       if (count > 2000)
-	break;
+        break;
 
       if ((count++ % 25) <= 10) {
-	free(adu);
-	continue;
+        free(adu);
+        continue;
       }
 
       if (aq_add_adu(&qout, adu)) {
-	mp3_frame_t *frame_out = aq_get_frame(&qout);
-	assert(frame_out != NULL);
-	
-	static int cout = 0;
-	
-	memset(frame_out->raw, 0, 4 + frame_out->si_size);
-	if (!mp3_fill_hdr(frame_out) ||
-	    !mp3_fill_si(frame_out) ||
-	    (mp3_write_frame(&out, frame_out) <= 0)) {
-	  fprintf(stderr, "Could not write frame\n");
-	  file_close(&in);
-	  file_close(&out);
-	  return 1;
-	}
-	
-	printf("%d out frame_size %ld, backptr %d, adu_size %ld, cksum %ld\n",
-	       cout++,
-	       frame_out->frame_data_size,
-	       frame_out->si.main_data_end,
-	       frame_out->adu_size,
-	       cksum(frame_out->raw, frame_out->frame_size));
-	
-	free(frame_out);
+        mp3_frame_t *frame_out = aq_get_frame(&qout);
+        assert(frame_out != NULL);
+        
+        static int cout = 0;
+        
+        memset(frame_out->raw, 0, 4 + frame_out->si_size);
+        if (!mp3_fill_hdr(frame_out) ||
+            !mp3_fill_si(frame_out) ||
+            (mp3_write_frame(&out, frame_out) <= 0)) {
+          fprintf(stderr, "Could not write frame\n");
+          file_close(&in);
+          file_close(&out);
+          return 1;
+        }
+        
+        printf("%d out frame_size %ld, backptr %d, adu_size %ld, cksum %ld\n",
+               cout++,
+               frame_out->frame_data_size,
+               frame_out->si.main_data_end,
+               frame_out->adu_size,
+               cksum(frame_out->raw, frame_out->frame_size));
+        
+        free(frame_out);
       }
 
       free(adu);

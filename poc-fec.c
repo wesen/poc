@@ -105,92 +105,92 @@ int poc_encoder(int sock, char *filename) {
       /* check if the FEC group is complete */
       if (++cnt == fec_k) {
 	unsigned int max_len = 0;
-	unsigned long group_duration = 0;
+        unsigned long group_duration = 0;
 
-	int i;
-	for (i = 0; i < fec_k; i++) {
-	  unsigned int adu_len = mp3_frame_size(in_adus[i]);
+        int i;
+        for (i = 0; i < fec_k; i++) {
+          unsigned int adu_len = mp3_frame_size(in_adus[i]);
 
-	  if (adu_len > max_len)
-	    max_len = adu_len;
+          if (adu_len > max_len)
+            max_len = adu_len;
 
-	  group_duration += in_adus[i]->usec;
-	}
+          group_duration += in_adus[i]->usec;
+        }
 
-	fec_time += group_duration;
+        fec_time += group_duration;
 
-	assert(max_len < FEC_PKT_PAYLOAD_SIZE);
+        assert(max_len < FEC_PKT_PAYLOAD_SIZE);
 
         /* Encode the FEC group */
-	unsigned char *in_ptrs[fec_k];
-	unsigned char buf[fec_k * max_len];
-	unsigned char *ptr = buf;
+        unsigned char *in_ptrs[fec_k];
+        unsigned char buf[fec_k * max_len];
+        unsigned char *ptr = buf;
         unsigned long bitrate = 0;
-	for (i = 0; i < fec_k; i++) {
-	  unsigned int adu_len = mp3_frame_size(in_adus[i]);
+        for (i = 0; i < fec_k; i++) {
+          unsigned int adu_len = mp3_frame_size(in_adus[i]);
 
-	  in_ptrs[i] = ptr;
-	  memcpy(ptr, in_adus[i]->raw, adu_len);
-	  if (adu_len < max_len)
-	    memset(ptr + adu_len, 0, max_len - adu_len);
-	  ptr += max_len;
+          in_ptrs[i] = ptr;
+          memcpy(ptr, in_adus[i]->raw, adu_len);
+          if (adu_len < max_len)
+            memset(ptr + adu_len, 0, max_len - adu_len);
+          ptr += max_len;
           bitrate += in_adus[i]->bitrate;
-	}
+        }
         bitrate /= fec_k;
 
-	for (i = 0; i < fec_n; i++) {
-	  pkt.hdr.packet_seq = i;
-	  pkt.hdr.fec_k = fec_k;
-	  pkt.hdr.fec_n = fec_n;
-	  pkt.hdr.fec_len = max_len + 2;
-	  pkt.hdr.group_tstamp = fec_time;
-	  
-	  fec_encode(fec, in_ptrs, pkt.payload, i, max_len);
+        for (i = 0; i < fec_n; i++) {
+          pkt.hdr.packet_seq = i;
+          pkt.hdr.fec_k = fec_k;
+          pkt.hdr.fec_n = fec_n;
+          pkt.hdr.fec_len = max_len + 2;
+          pkt.hdr.group_tstamp = fec_time;
+          
+          fec_encode(fec, in_ptrs, pkt.payload, i, max_len);
 
-	  if (i < fec_k) {
-	    pkt.hdr.len = mp3_frame_size(in_adus[i]);
-	  } else {
-	    pkt.hdr.len = max_len;
-	  }
+          if (i < fec_k) {
+            pkt.hdr.len = mp3_frame_size(in_adus[i]);
+          } else {
+            pkt.hdr.len = max_len;
+          }
 
-	  /*M
-	    Simulate packet loss.
-	  **/
+          /*M
+            Simulate packet loss.
+          **/
 #ifdef DEBUG_PLOSS
-	  if ((random() % 100) >= ploss_rate ) {
+          if ((random() % 100) >= ploss_rate ) {
 #endif /* DEBUG_PLOSS */
 
 #ifdef DEBUG
-	    fprintf(stderr,
-		    "sending fec packet group stamp %ld, gseq %d, pseq %d, size %d\n",
-		    pkt.hdr.group_tstamp, pkt.hdr.group_seq, pkt.hdr.packet_seq, pkt.hdr.len);
+            fprintf(stderr,
+                    "sending fec packet group stamp %ld, gseq %d, pseq %d, size %d\n",
+                    pkt.hdr.group_tstamp, pkt.hdr.group_seq, pkt.hdr.packet_seq, pkt.hdr.len);
 #endif
-	    
-	    /* send rtp packet */
-	    if (fec_pkt_send(&pkt, sock) < 0) {
-	      perror("Error while sending packet");
+            
+            /* send rtp packet */
+            if (fec_pkt_send(&pkt, sock) < 0) {
+              perror("Error while sending packet");
 
-	      retval = 0;
-	      goto exit;
-	    }
+              retval = 0;
+              goto exit;
+            }
 #ifdef DEBUG_PLOSS
-	  }
+          }
 #endif /* DEBUG_PLOSS */
 
-	  /*M
-	    Update the time we have to wait.
-	  **/
-	  wait_time += (group_duration / fec_n);
-	  fec_time2 += (group_duration / fec_n);
+          /*M
+            Update the time we have to wait.
+          **/
+          wait_time += (group_duration / fec_n);
+          fec_time2 += (group_duration / fec_n);
 
-	  /*M
-	    Sender synchronisation (\verb|sleep| until the next
-	    packet has to be sent.
-	  **/
-	  if (wait_time > 1000)
-	    usleep(wait_time);
+          /*M
+            Sender synchronisation (\verb|sleep| until the next
+            packet has to be sent.
+          **/
+          if (wait_time > 1000)
+            usleep(wait_time);
 
-	  if (!quiet) {	
+          if (!quiet) {        
             static unsigned int count = 0;
             if ((count++ % 10) == 0) {
               if (mp3_file.size > 0) {
@@ -222,28 +222,28 @@ int poc_encoder(int sock, char *filename) {
               fflush(stdout);
             }
           }
-	  
-	  /*M
-	    Get length of iteration.
-	  **/
-	  gettimeofday(&tv, NULL);
-	  unsigned long len =
-	    (tv.tv_sec - start_sec) * 1000000 + (tv.tv_usec - start_usec);
-	  
-	  wait_time -= len;
-	  if (abs(wait_time) > MAX_WAIT_TIME)
-	    wait_time = 0;
+          
+          /*M
+            Get length of iteration.
+          **/
+          gettimeofday(&tv, NULL);
+          unsigned long len =
+            (tv.tv_sec - start_sec) * 1000000 + (tv.tv_usec - start_usec);
+          
+          wait_time -= len;
+          if (abs(wait_time) > MAX_WAIT_TIME)
+            wait_time = 0;
 
-	  start_sec = tv.tv_sec;
-	  start_usec = tv.tv_usec;
-	}
+          start_sec = tv.tv_sec;
+          start_usec = tv.tv_usec;
+        }
 
-	pkt.hdr.group_seq++;
+        pkt.hdr.group_seq++;
 
-	for (i = 0; i < fec_k; i++)
-	  free(in_adus[i]);
+        for (i = 0; i < fec_k; i++)
+          free(in_adus[i]);
 
-	cnt = 0;
+        cnt = 0;
       }
     }
   }
@@ -266,7 +266,7 @@ int poc_encoder(int sock, char *filename) {
 **/
 static void usage(void) {
   fprintf(stderr,
-	  "Usage: ./poc-fec [-s address] [-p port] [-k fec_k] [-n fec_n] [-q] [-t ttl]");
+          "Usage: ./poc-fec [-s address] [-p port] [-k fec_k] [-n fec_n] [-q] [-t ttl]");
 #ifdef WITH_IPV6
   fprintf(stderr, " [-6]");
 #endif /* WITH_IPV6 */
@@ -300,9 +300,9 @@ int main(int argc, char *argv[]) {
   int c;
   while ((c = getopt(argc, argv, "hs:p:t:qP:k:n:"
 #ifdef WITH_IPV6
-		     "6"
+                     "6"
 #endif /* WITH_IPV6 */
-		     )) >= 0) {
+                     )) >= 0) {
     switch (c) {
 #ifdef WITH_IPV6
     case '6':
@@ -312,7 +312,7 @@ int main(int argc, char *argv[]) {
       
     case 's':
       if (address != NULL)
-	free(address);
+        free(address);
 
       address = strdup(optarg);
       break;
@@ -340,11 +340,11 @@ int main(int argc, char *argv[]) {
 #ifdef DEBUG_PLOSS
     case 'P':
       {
-	static struct timeval tv;
-	gettimeofday(&tv, NULL);
-	srandom(tv.tv_sec);
-	ploss_rate = atoi(optarg);
-	break;
+        static struct timeval tv;
+        gettimeofday(&tv, NULL);
+        srandom(tv.tv_sec);
+        ploss_rate = atoi(optarg);
+        break;
       }
 #endif /* DEBUG_PLOSS */
 

@@ -56,8 +56,8 @@ int main(int argc, char *argv[]) {
     }
     
     if (!mp3_fill_hdr(&frame) ||
-	!mp3_fill_si(&frame) ||
-	(mp3_write_frame(&out, &frame) <= 0)) {
+        !mp3_fill_si(&frame) ||
+        (mp3_write_frame(&out, &frame) <= 0)) {
       fprintf(stderr, "Could not write frame\n");
       mp3_close(&in);
       mp3_close(&out);

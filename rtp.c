@@ -108,8 +108,8 @@ void rtp_pkt_pack(rtp_pkt_t *pkt) {
   **/
   if (pkt->b.p) {
     assert((pkt->length +
-	    pkt->hlen + pkt->b.cc * RTP_CSRC_SIZE +
-	    pkt->plen + 1) < RTP_PKT_SIZE);
+            pkt->hlen + pkt->b.cc * RTP_CSRC_SIZE +
+            pkt->plen + 1) < RTP_PKT_SIZE);
     
     unsigned char *ptr = pkt->data + pkt->hlen + pkt->length + pkt->plen;
     *ptr = pkt->plen;
@@ -256,7 +256,7 @@ int rtp_pkt_sign(rtp_pkt_t *pkt, RSA *rsa) {
 
   int slen;
   if (!RSA_sign(NID_sha1, md, mdlen,
-		pkt->data + pkt->hlen + pkt->length, &slen, rsa))
+                pkt->data + pkt->hlen + pkt->length, &slen, rsa))
     return 0;
 
   pkt->plen = slen;
@@ -288,7 +288,7 @@ int rtp_pkt_verify(rtp_pkt_t *pkt, RSA *rsa) {
   EVP_DigestFinal(&ctx, md, &mdlen);
 
   if (!RSA_verify(NID_sha1, md, mdlen,
-		  pkt->data + pkt->hlen + pkt->length, pkt->plen, rsa))
+                  pkt->data + pkt->hlen + pkt->length, pkt->plen, rsa))
     return 0;
 
   return 1;
@@ -406,13 +406,13 @@ void rtp_rfc3119_pkt_init(rtp_pkt_t *pkt) {
 #include <stdio.h>
 
 static void testit(char *name,
-		   unsigned long result,
-		   unsigned long should) {
+                   unsigned long result,
+                   unsigned long should) {
   if (result == should) {
     printf("Test %s was successful\n", name);
   } else {
     printf("Test %s was not successful, %lx should have been %lx\n",
-	   name, result, should);
+           name, result, should);
   }
 }
 
