@@ -1,5 +1,5 @@
 Source: poc
-Section: unknown
+Section: sound
 Priority: optional
 Maintainer: Mike Gerber <mike@sprachgewalt.de>
 Build-Depends: debhelper (>= 4.0.0)
@@ -8,15 +8,14 @@ Standards-Version: 3.6.1
 Package: poc
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Description: poc is a mp3 and ogg streamer supporting HTTP and RTP protocols
-  poc is a suite of MP3 tools and MP3 streaming programs. It can stream
-  MP3s over HTTP, RTP (RFC 2250 and RFC 3119) and a special protocol to
-  enable the use of Forward Error Correction to protect the MP3 stream
-  against packet loss. It can also stream OGGs over HTTP.
-  .
-  In addition to the streaming programs, poc contains two MP3 tools:
-  mp3cue and mp3cut. mp3cue can cut a big MP3 file according to a
-  tracklisting contained in a .cue file. mp3cut can split and
-  concatenate MP3 files according to time slices given on the command
-  line.
-
+Description: An MP3 and Ogg streamer supporting HTTP and RTP protocols
+ poc is a suite of MP3 tools and MP3 streaming programs. It can stream
+ MP3s over HTTP, RTP (RFC 2250 and RFC 3119) and a special protocol to
+ enable the use of Forward Error Correction to protect the MP3 stream
+ against packet loss. It can also stream OGGs over HTTP.
+ .
+ In addition to the streaming programs, poc contains two MP3 tools:
+ mp3cue and mp3cut. mp3cue can cut a big MP3 file according to a
+ tracklisting contained in a .cue file. mp3cut can split and
+ concatenate MP3 files according to time slices given on the command
+ line.
