@@ -1,6 +1,6 @@
 
 /*C
-  (c) 2003 Institut fuer Telematik, Universitaet Karlsruhe
+  (c) 2005 bl0rg.net
 **/
 
 #ifndef PACK_H__
