@@ -169,7 +169,6 @@ CLIENTS := pob-fec \
            pob-3119 \
            pob-2250
 CLIENTS_EXE := $(patsubst %,%.exe,$(CLIENTS))
-CLIENTS_OBJS :=
 
 clients: $(CLIENTS)
 
@@ -194,7 +193,7 @@ POB_FEC_OBJS := $(NETWORK_OBJS) $(FEC_OBJS) $(UTILS_OBJS) $(MP3_OBJS) pob-fec.o
 include pob-fec.d
 pob-fec: $(POB_FEC_OBJS)
 	$(CC) $(CFLAGS) -o $@ $(POB_FEC_OBJS) $(LDFLAGS) $(LIBS)
-CLIENTS_OBJ += $(POB_FEC_OBJS)
+CLIENTS_OBJS += $(POB_FEC_OBJS)
 
 clients-clean:
 	- rm -f $(CLIENTS) $(CLIENTS_EXE) $(CLIENTS_OBJS)
@@ -328,10 +327,42 @@ tex/code.pdf: tex/code.tex $(TEXS)
 tex-clean:
 	- rm -f $(TEXS) tex/studienarbeit.pdf tex/code.pdf tex/*.aux tex/*.log
 
+dep-clean:
+	- rm -f *.d
+
 clean: tests-clean \
        clients-clean \
        servers-clean \
        tex-clean \
        mp3cue-clean \
        mp3cut-clean \
-       mp3length-clean
+       mp3length-clean \
+       dep-clean
+
+PREFIX:= /usr/local
+install: install-man
+	install -g root -o root -m 0755 mp3cue    $(DESTDIR)/$(PREFIX)/bin
+	install -g root -o root -m 0755 mp3cut    $(DESTDIR)/$(PREFIX)/bin
+	install -g root -o root -m 0755 mp3length $(DESTDIR)/$(PREFIX)/bin
+	install -g root -o root -m 0755 pob-2250  $(DESTDIR)/$(PREFIX)/bin
+	install -g root -o root -m 0755 pob-3119  $(DESTDIR)/$(PREFIX)/bin
+	install -g root -o root -m 0755 pob-fec   $(DESTDIR)/$(PREFIX)/bin
+	install -g root -o root -m 0755 poc-2250  $(DESTDIR)/$(PREFIX)/bin
+	install -g root -o root -m 0755 poc-3119  $(DESTDIR)/$(PREFIX)/bin
+	install -g root -o root -m 0755 poc-fec   $(DESTDIR)/$(PREFIX)/bin
+	install -g root -o root -m 0755 poc-http  $(DESTDIR)/$(PREFIX)/bin
+	install -g root -o root -m 0755 pogg-http $(DESTDIR)/$(PREFIX)/bin
+
+install-man:
+	install -g root -o root -m 0644 man/man1/mp3cue.1    $(DESTDIR)/$(PREFIX)/share/man/man1
+	install -g root -o root -m 0644 man/man1/mp3cut.1    $(DESTDIR)/$(PREFIX)/share/man/man1
+	install -g root -o root -m 0644 man/man1/mp3length.1 $(DESTDIR)/$(PREFIX)/share/man/man1
+	install -g root -o root -m 0644 man/man1/pob-2250.1  $(DESTDIR)/$(PREFIX)/share/man/man1
+	install -g root -o root -m 0644 man/man1/pob-3119.1  $(DESTDIR)/$(PREFIX)/share/man/man1
+	install -g root -o root -m 0644 man/man1/pob-fec.1   $(DESTDIR)/$(PREFIX)/share/man/man1
+	install -g root -o root -m 0644 man/man1/poc-2250.1  $(DESTDIR)/$(PREFIX)/share/man/man1
+	install -g root -o root -m 0644 man/man1/poc-3119.1  $(DESTDIR)/$(PREFIX)/share/man/man1
+	install -g root -o root -m 0644 man/man1/poc-fec.1   $(DESTDIR)/$(PREFIX)/share/man/man1
+	install -g root -o root -m 0644 man/man1/poc-http.1  $(DESTDIR)/$(PREFIX)/share/man/man1
+	install -g root -o root -m 0644 man/man1/pogg-http.1 $(DESTDIR)/$(PREFIX)/share/man/man1
+
