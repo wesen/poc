@@ -169,7 +169,9 @@ int poc_encoder(int sock, struct sockaddr_in *saddr, char *filename) {
             
             /* send rtp packet */
             if (fec_pkt_sendto(&pkt, sock, (struct sockaddr *)saddr, sizeof(*saddr)) < 0) {
-              if (errno != ENOBUFS) {
+              if (errno == ENOBUFS) {
+		fprintf(stderr, "Output buffers full, waiting...\n");
+	      } else {
                 perror("Error while sending packet");
                 
                 retval = 0;

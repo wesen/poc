@@ -17,6 +17,7 @@
 
 #include "network.h"
 #include "http.h"
+#include "misc.h"
 
 static void http_client_init(http_client_t *client);
 static int http_handle_client(http_server_t *server,
@@ -302,8 +303,8 @@ static int http_handle_client(http_server_t *server,
   int  tmp;
   
   /* Read header data. */
-  tmp = read(client->fd, client->buf + client->len, 
-             HTTP_MAX_HDR_LEN - client->len - 5);
+  tmp = unix_read(client->fd, client->buf + client->len, 
+		  HTTP_MAX_HDR_LEN - client->len - 5);
   
   if (tmp <= 0)
     return -1;

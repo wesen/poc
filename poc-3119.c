@@ -16,6 +16,7 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include <string.h>
+#include <errno.h>
 
 #ifdef NEED_GETOPT_H__
 #include <getopt.h>
@@ -157,11 +158,15 @@ int poc_mainloop(int sock, char *filename, int quiet) {
 #endif /* DEBUG_PLOSS */
         /* send rtp packet */
         if (rtp_pkt_send(&pkt, sock) < 0) {
-          perror("Error while sending packet");
-          free(adu);
-          aq_destroy(&adu_queue);
+	  if (errno == ENOBUFS) {
+	    fprintf(stderr, "Output buffers full, waiting...\n");
+	  } else {
+	    perror("Error while sending packet");
+	    free(adu);
+	    aq_destroy(&adu_queue);
           
-          return 0;
+	    return 0;
+	  }
         }
 #ifdef DEBUG_PLOSS
       }

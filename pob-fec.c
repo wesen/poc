@@ -132,7 +132,7 @@ int pob_fec_recv_pkt(int sock, fec_pkt_t *pkt) {
     Check for interrupted system call.
   **/
   if (ret == -1) {
-    if (errno == EINTR) {
+    if ((errno == EINTR) || (errno == EAGAIN)) {
       return 0; /* timeout */
     } else {
       return -1; /* error */

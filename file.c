@@ -15,6 +15,7 @@
 #include <sys/stat.h>
 
 #include "file.h"
+#include "misc.h"
 
 /*M
   \emph{Read and retry on interrupted system calls.}
@@ -23,31 +24,8 @@ int file_read(file_t *file, unsigned char *buf, size_t size) {
   assert(file != NULL);
   assert(buf != NULL);
   assert(size > 0);
-  
-  int len = 0;
-  ssize_t i;
-  
-  while ((i = read(file->fd, buf + len, (size_t)(size - len))) != 0) {
-    if (i < 0) {
-      if (errno == EINTR)
-        continue;
-      else {
-        perror("read");
-        return -1;
-      }
-    } else {
-      len += i;
-      if (len == size)
-        break;
-    }
-  }
-  
-  if (i == 0)
-    return 0;
-  else {
-    file->offset += len;
-    return len;
-  }
+
+  return unix_read(file->fd, buf, size);
 }
 
 /*M
@@ -99,27 +77,10 @@ int file_open_read(file_t *file, char *filename) {
   \emph{Write a buffer to filedescriptor fd.}
 **/
 int file_write(file_t *file, unsigned char *buf, size_t size) {
-  int i, len = 0;
+  assert(file != NULL);
+  assert(buf != NULL);
 
-  while ((i = write(file->fd, buf + len, size - len))) {
-    if (i < 0) {
-      if (errno == EINTR)
-        continue;
-      else {
-        perror("write");
-        return -1;
-      }
-    } else {
-      len += i;
-      if (len == size)
-        break;
-    }
-  }
-
-  if (i == 0)
-    return 0;
-  else
-    return len;
+  return unix_write(file->fd, buf, size);
 }
 
 /*M
