@@ -1,0 +1,69 @@
+INTRODUCTION 
+============
+
+poc is a suite of MP3 streaming programs. It can stream MP3s over HTTP,
+RTP (RFC 2250 and RFC 3119) and a special protocol to enable the use
+of Forward Error Correction to protect the MP3 stream against packet
+loss.
+
+RTP is a protocol used mostly on top of UDP to transfer multimedia data. It
+can be used over multicast (all the UDP servers use a multicast address as
+default). The protocol described in RFC 2250 uses the raw mp3 frames as
+packet payloads, which can lead to problems in case of packet loss, as
+mp3 frames are not independent of one another (the bit reservoir of a
+mp3 frame is stored in previous frames). The protocol described in RFC 3119
+fixes this problem by using ADUs (independent mp3 frames) as packet payloads,
+but does not protect the stream against packet loss (it does however mitigate
+the effects of packet loss).
+
+poc contains a program which uses a homebrown protocol to protect mp3 
+streams over UDP against packet loss. Like RFC 3119, it uses ADUs, which are
+put together in groups, which are then encoded redundantly using a FEC
+method designed by Luigi Rizzo.
+
+The servers are:
+    - poc-http to stream over HTTP
+    - poc-2250 to stream over RTP RFC 2250
+    - poc-3119 to stream over RTP RFC 3119
+    - poc-fec to stream using FEC
+
+The servers accept a list of MP3 files on the command line and stream them
+sequentially. They can also accept input from stdin using - as a filename.
+
+The clients are:
+    - pob-2250 to receive a RTP RFC 2250 stream into a linked list buffer
+    - pob-2250-rb to receive a RTP RFC 2250 stream into a ring buffer
+      (preferred)
+    - pob-3119 to receive a RTP RFC 3119 stream into a linked list buffer
+    - pob-3119-rb to receive a RTP RFC 3119 stream into a ring buffer
+      (preferred)
+    - pob-fec to receive a FEC protected stream into a ring buffer
+
+The clients output the mp3 stream to stdout, so it can be piped into a mp3
+decoder:
+     ./pob-3119-rb | mpg123 -
+with buffering:
+     ./pob-3119-rb | mpg123 -b 2048 -
+
+NOTE
+====
+
+poc is a work in progress, it works for me, but is not nearly finished. If
+poc deletes your mp3s, invokes satan or empties your cookie jar, don't hold
+me responsible for it. However, you can mail any suggestions, bug reports
+and fixes to <manuel-poc@bl0rg.net>.
+
+BUILD
+=====
+
+You need a C99 compliant compiler to compile poc. Check conf.h if needed.
+It works under Linux, FreeBSD, MacOSX.
+
+TODO
+====
+
+Write a real Makefile and check portability.
+Test the programs thoroughly.
+Write input plugins for common audio players (itunes, xmms, winamp).
+Implement feedback into the FEC protocol to allow for autoadaptive FEC.
+Scale the mp3 to reduce FEC overhead.

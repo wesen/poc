@@ -1,0 +1,120 @@
+\documentclass{wissdoc}
+%\usepackage{palatino}
+%\usepackage[german]{babel}
+%\usepackage[latin1]{inputenc}
+\usepackage{listings}
+\usepackage{boxedminipage}
+%\usepackage{fancyhdr}
+
+%\newif\ifpdf
+%\ifx\pdfoutput\undefined
+%\pdffalse % es wird kein PDFLaTeX benutzt
+%\else
+%\pdfoutput=1 % es wird PDFLaTeX benutzt
+%\pdftrue
+%\fi
+
+%\ifpdf
+%\usepackage[pdftex]{graphicx}
+%\else
+%\usepackage{graphicx}
+%\fi
+
+\renewenvironment{definition}[1][Definition]{\begin{trivlist}
+    \item[\hskip \labelsep {\bfseries #1}]}{\end{trivlist}}
+\newtheorem{theorem}{Theorem}[section]
+
+\newcommand{\gf}[1]{\mbox{$\mathrm{GF}\left(#1\right)$}}
+
+\setlength{\fboxsep}{6pt} 
+
+\newenvironment{algorithm}{\begin{boxedminipage}{0.8\textwidth}\begin{description}}{\end{description}\end{boxedminipage}}
+
+\begin{document}
+
+%\ifpdf
+%\DeclareGraphicsExtensions{.pdf, .jpg, .tif, .png}
+%\else
+%\DeclareGraphicsExtensions{.eps, .jpg}
+%\fi
+
+\include{titelseite}
+
+\tableofcontents
+
+\include{einleitung}
+
+\include{uebersicht}
+
+\include{streaming}
+
+\include{transcoding}
+
+\include{fecsec}
+
+\include{implementation}
+
+\include{zusammenfassung}
+
+\newpage
+\addcontentsline{toc}{chapter}{\bibname}
+\nocite{*} 
+\bibliographystyle{itmalpha}
+\bibliography{studienarbeit}
+
+\appendix
+
+\chapter{Code}
+\label{sec:code}
+\lstset{
+  language=C,
+  basicstyle = \small,
+  columns = fullflexible,
+  xleftmargin = 6mm,
+  xrightmargin = 6mm,
+  stringstyle = \textsl,%\itshape,
+  showstringspaces = false,
+  numbers = left,
+  stepnumber = 1,
+  numberstyle = \tiny,
+  captionpos = b
+}
+
+\include{pack}
+\include{dlist}
+\include{network}
+\include{bv}
+\include{mp3}
+\include{aq}
+\include{rtp}
+\include{galois}
+\include{matrix}
+
+\include{fec}
+\include{fec-pkt}
+\include{fec-group}
+
+\include{rtp-rb}
+\include{fec-rb}
+
+
+\include{poc-http}
+\include{poc-2250}
+\include{pob-2250}
+\include{pob-2250-rb}
+
+\include{poc-3119}
+\include{pob-3119}
+\include{pob-3119-rb}
+
+\include{poc-fec}
+\include{pob-fec}
+
+\include{ogg}
+\include{pogg-http}
+
+%\chapter{Fehlerlogbuch}
+
+%\include{errorlog}
+
+\end{document}
