@@ -43,7 +43,7 @@ all:  servers clients mp3cue mp3cut mp3length
 	$(CC) -MM $(CFLAGS) $< > $@
 	$(CC) -MM $(CFLAGS) $< | sed s/\\.o/.d/ >> $@
 
-MP3_OBJS     := mp3-read.o mp3-write.o mp3.o aq.o 
+MP3_OBJS     := mp3-read.o mp3-write.o mp3.o aq.o id3.o
 NETWORK_OBJS := network.o network4.o network6.o
 RTP_OBJS     := rtp.o rtp-rb.o
 UTILS_OBJS   := pack.o bv.o signal.o dlist.o file.o buf.o crc32.o

@@ -1,3 +1,4 @@
+
 /*C
   (c) 2003 Institut fuer Telematik, Universitaet Karlsruhe
 **/
@@ -43,6 +44,14 @@
 #define UINT32_PACK(ptr, i)				\
   { *(ptr++) = (unsigned char)(((i) >> 24) & 0xFF);	\
     *(ptr++) = (unsigned char)(((i) >> 16) & 0xFF);	\
+    *(ptr++) = (unsigned char)(((i) >> 8)  & 0xFF);	\
+    *(ptr++) = (unsigned char)((i)         & 0xFF); }
+
+/*M
+  \emph{24 bits value packing macro.}
+**/
+#define UINT24_PACK(ptr, i)				\
+  { *(ptr++) = (unsigned char)(((i) >> 16) & 0xFF);	\
     *(ptr++) = (unsigned char)(((i) >> 8)  & 0xFF);	\
     *(ptr++) = (unsigned char)((i)         & 0xFF); }
 
