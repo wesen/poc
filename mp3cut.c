@@ -154,8 +154,8 @@ int main(int argc, char *argv[]) {
 
   if (duration != 0)
     to = from + duration;
-  
-  if ((to != 0) && (to >= from)) {
+
+  if ((to != 0) && (to <= from)) {
     fprintf(stderr, "Can not cut mp3 from %s to %s\n", frombuf, tobuf);
     retval = EXIT_FAILURE;
     goto exit;
@@ -194,29 +194,31 @@ int main(int argc, char *argv[]) {
     
     Read while current < end or till the end of the file if it's the last track.
   **/
-  while (current < from) {
+  while (current <= to) {
     mp3_frame_t frame;
     if (mp3_next_frame(&mp3file, &frame) > 0) {
       if (aq_add_frame(&qin, &frame)) { 
 	adu_t *adu = aq_get_adu(&qin);
 	assert(adu != NULL);
-	
-	if (aq_add_adu(&qout, adu)) {
-	  mp3_frame_t *frame_out = aq_get_frame(&qout);
-	  assert(frame_out != NULL);
-	  
-	  memset(frame_out->raw, 0, 4 + frame_out->si_size);
-	  if (!mp3_fill_hdr(frame_out) ||
-	      !mp3_fill_si(frame_out) ||
-	      (mp3_write_frame(&outfile, frame_out) <= 0)) {
-	    fprintf(stderr, "Could not write frame\n");
-	    file_close(&mp3file);
-	    file_close(&outfile);
-	    retval = 1;
-	    goto exit;
+
+	if (current >= from) {
+	  if (aq_add_adu(&qout, adu)) {
+	    mp3_frame_t *frame_out = aq_get_frame(&qout);
+	    assert(frame_out != NULL);
+	    
+	    memset(frame_out->raw, 0, 4 + frame_out->si_size);
+	    if (!mp3_fill_hdr(frame_out) ||
+		!mp3_fill_si(frame_out) ||
+		(mp3_write_frame(&outfile, frame_out) <= 0)) {
+	      fprintf(stderr, "Could not write frame\n");
+	      file_close(&mp3file);
+	      file_close(&outfile);
+	      retval = 1;
+	      goto exit;
+	    }
+	    
+	    free(frame_out);
 	  }
-	  
-	  free(frame_out);
 	}
 	
 	free(adu);
