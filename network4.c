@@ -92,6 +92,7 @@ int net_udp4_send_socket(char *hostname,
     Get hostname address.
   **/
   struct hostent *host;
+
   if (NULL == (host = gethostbyname(hostname))) {
     perror("gethostbyname");
     return -1;
@@ -138,17 +139,18 @@ int net_udp4_recv_socket(char *hostname,
   /*M
     Get hostname address.
   **/
-  struct hostent *host;
-  if (NULL == (host = gethostbyname(hostname))) {
-    perror("gethostbyname");
-    return -1;
-  }
+  struct hostent *host = NULL;
+  if (hostname)
+    host = gethostbyname(hostname);
 
   /*M
     Initialize sockaddr structure.
   **/
   struct sockaddr_in addr;
-  memcpy(&addr.sin_addr, host->h_addr_list[0], (size_t)host->h_length);
+  if (host)
+    memcpy(&addr.sin_addr, host->h_addr_list[0], (size_t)host->h_length);
+  else
+    memset(&addr.sin_addr, 0, sizeof(addr.sin_addr));
 
   /*M
     Create udp socket.
@@ -242,20 +244,27 @@ int net_tcp4_listen_socket(char *hostname, unsigned short port) {
   /*M
     Get hostname address.
   **/
-  struct hostent *host;
-  if (NULL == (host = gethostbyname(hostname))) {
-    perror("gethostbyname");
-    return -1;
-  }
+  struct hostent *host = NULL;
+  if (hostname)
+    host = gethostbyname(hostname);
 
-  if (host->h_length != 4) {
-    perror("gethostbyname");
-    return -1;
+  /*M
+    Initialize sockaddr structure.
+  **/
+  unsigned char ip[4];
+  if (host) {
+    if (host->h_length != 4) {
+      perror("gethostbyname");
+      return -1;
+    }
+    memcpy(ip, host->h_addr_list[0], sizeof(ip));
+  } else {
+    memset(ip, 0, sizeof(ip));
   }
-
+  
   int sock;
   if (((sock = net_tcp4_nonblock_socket()) < 0) ||
-      (net_tcp4_bind_reuse(sock, host->h_addr_list[0], port) < 0) ||
+      (net_tcp4_bind_reuse(sock, ip, port) < 0) ||
       (listen(sock, 16) < 0)) {
     return -1;
   }
