@@ -33,8 +33,8 @@ all:  servers clients mp3cue mp3cut mp3length
 
 # Create dependencies
 %.d: %.c
-	gcc -MM $(CFLAGS) $< > $@
-	gcc -MM $(CFLAGS) $< | sed s/\\.o/.d/ >> $@
+	$(CC) -MM $(CFLAGS) $< > $@
+	$(CC) -MM $(CFLAGS) $< | sed s/\\.o/.d/ >> $@
 
 MP3_OBJS     := mp3-read.o mp3-write.o mp3.o aq.o 
 NETWORK_OBJS := network.o network4.o network6.o
