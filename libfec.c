@@ -191,7 +191,7 @@ struct fec_encode_s {
 
 fec_encode_t *libfec_new_encode(unsigned char fec_k,
                                 unsigned char fec_n) {
-  if (fec_n <= fec_k)
+  if (fec_k > fec_n)
     return NULL;
   
   fec_encode_t *encode = malloc(sizeof(fec_encode_t));
