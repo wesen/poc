@@ -73,6 +73,8 @@ static int parse_time(const char *str, unsigned long *time) {
       hours = numbers[0];
       minutes = numbers[1];
       seconds = numbers[2];
+      if (minutes >= 60)
+        return -1;
     }
     break;
 
@@ -81,13 +83,15 @@ static int parse_time(const char *str, unsigned long *time) {
     minutes = numbers[1];
     seconds = numbers[2];
     ms = numbers[3];
+    if (minutes >= 60)
+      return -1;
     break;
 
   default:
     return -1;
   }
 
-  if ((minutes >= 60) || (seconds >= 60) || (ms >= 1000))
+  if ((seconds >= 60) || (ms >= 1000))
     return -1;
 
   *time = (((hours * 60) + minutes) * 60 + seconds) * 1000 + ms;
