@@ -17,11 +17,19 @@
 #define min(a, b) ((a) < (b) ? (a) : (b))
 
 static void usage(void) {
-  printf("Usage: mp3cut [-f min:sec[:ms]] [-t min:sec[:ms]] [-d min:sec[:ms]] [-o output] mp3file\n");
-  printf("-f min:sec[:ms]: Cut from min:sec[:ms], default 00:00:00\n");
-  printf("-t min:sec[:ms]: Cut until min:sec[:ms], default end of file\n");
-  printf("-d min:sec[:ms]: Cut duration, default not set\n");
+  printf("Usage: mp3cut [-o outputfile] [-t [hh:]mm:ss[+ms]-[hh:]mm:ss[+ms]] mp3 [-t ...] mp3\n");
   printf("-o output: Output file, default mp3file.out.mp3\n");
+}
+
+static int parse_number(const char *str, unsigned long *result) {
+  char buf[16];
+  char *endptr = NULL;
+  strncpy(buf, str, sizeof(buf));
+  buf[sizeof(buf) - 1] = '\0';
+  *result = strtoul(buf, &endptr, 10);
+  if ((*endptr != '\0') || (endptr == buf))
+    return -1;
+  return 0;
 }
 
 static int parse_time(const char *str, unsigned long *time) {
@@ -32,40 +40,60 @@ static int parse_time(const char *str, unsigned long *time) {
   
   *time = 0;
   
-  char buf[16];
+  char *token, *token2;
+  unsigned long numbers[4];
+  unsigned long cnt = 0;
 
-  char *first = strtok(strbuf, ":");
-  char *endptr = NULL;
-  if (first == NULL)
+  token = strtok(strbuf, "+:");
+  if ((token == NULL) || (parse_number(token, &numbers[cnt++]) < 0))
     return -1;
-  strncpy(buf, first, sizeof(buf));
-  buf[sizeof(buf) - 1] = '\0';
-  unsigned long minutes = strtoul(buf, &endptr, 10);
-  if ((*endptr != '\0') || (endptr == buf))
+  token = strtok(NULL, "+:");
+  if ((token == NULL) || (parse_number(token, &numbers[cnt++]) < 0))
     return -1;
-  *time += minutes;
-  *time *= 60;
+  token = strtok(NULL, "+:");
+  if (token && (parse_number(token, &numbers[cnt++]) < 0))
+    return -1;
+  token = strtok(NULL, "+:");
+  if (token && (parse_number(token, &numbers[cnt++]) < 0))
+    return -1;
 
-  char *second = strtok(NULL, ":");
-  if (second == NULL)
-    return -1;
-  strncpy(buf, second, sizeof(buf));
-  buf[sizeof(buf)-1] = '\0';
-  unsigned long seconds = strtoul(buf, &endptr, 10);
-  if ((seconds >= 60) || (*endptr != '\0') || (endptr == buf))
-    return -1;
-  *time += seconds;
-  *time *= 1000;
+  int mspresent = (strchr(str, '+') != NULL);
+  unsigned long hours = 0, minutes = 0, seconds = 0, ms = 0;
+  switch (cnt) {
+  case 2:
+    if (mspresent)
+      return -1;
+    minutes = numbers[0];
+    seconds = numbers[1];
+    break;
 
-  char *third = strtok(NULL, ":");
-  if (third == NULL)
-    return 0;
-  strncpy(buf, third, sizeof(buf));
-  buf[sizeof(buf)-1] = '\0';
-  unsigned long ms = strtoul(buf, &endptr, 10);
-  if ((ms >= 1000) || (*endptr != '\0') || (endptr == buf))
+  case 3:
+    if (mspresent) {
+      minutes = numbers[0];
+      seconds = numbers[1];
+      ms = numbers[2];
+    } else {
+      hours = numbers[0];
+      minutes = numbers[1];
+      seconds = numbers[2];
+    }
+    break;
+
+  case 4:
+    hours = numbers[0];
+    minutes = numbers[1];
+    seconds = numbers[2];
+    ms = numbers[3];
+    break;
+
+  default:
     return -1;
-  *time += ms;
+  }
+
+  if ((minutes >= 60) || (seconds >= 60) || (ms >= 1000))
+    return -1;
+
+  *time = (((hours * 60) + minutes) * 60 + seconds) * 1000 + ms;
 
   return 0;
 }
@@ -76,179 +104,193 @@ static void format_time(unsigned long time, char *str, unsigned int len) {
   unsigned long secs = time % 60;
   time /= 60;
   unsigned long minutes = time;
+  time /= 60;
+  unsigned long hours = time;
 
-  snprintf(str, len, "%lu:%.2lu:%.3lu", minutes, secs, ms);
+  snprintf(str, len, "%.2lu:%.2lu:%.2lu+%.3lu", hours, minutes, secs, ms);
 }
 
-int main(int argc, char *argv[]) {
-  char *mp3filename = NULL;
-  int retval = EXIT_SUCCESS;
-  unsigned long from = 0, to = 0, duration = 0;
-  char outfilename[256];
+typedef struct mp3cut_s {
+  char filename[256];
+  unsigned long from, to;
+} mp3cut_t;
 
-  memset(outfilename, '\0', sizeof(outfilename));
-
-  int c;
-  while ((c = getopt(argc, argv, "f:t:d:o:h")) >= 0) {
-    switch (c) {
-    case 'f':
-      if (parse_time(optarg, &from) < 0) {
-	fprintf(stderr, "Could not parse from time: %s\n", optarg);
-	usage();
-	retval = EXIT_FAILURE;
-	goto exit;
+static unsigned int parse_arguments(mp3cut_t *mp3cuts, unsigned int max_cuts,
+                                    char *outfilename, unsigned int max_outfilename,
+                                    int argc, char *argv[]) {
+  int i;
+  unsigned int mp3cuts_cnt = 0;
+  for (i = 0; i < max_cuts; i++) {
+    mp3cuts[i].from = mp3cuts[i].to = 0;
+    memset(mp3cuts[i].filename, '\0', sizeof(mp3cuts[0].filename));
+  }
+  for (i = 1; i < argc; i++) {
+    if (!strcmp(argv[i], "-h")) {
+      goto exit_usage;
+    } else if (!strcmp(argv[i], "-o")) {
+      if ((i == 1) && (argc > (i+1))) {
+        strncpy(outfilename, argv[i+1], max_outfilename);
+        outfilename[max_outfilename - 1] = '\0';
+        i++;
+      } else {
+        goto exit_usage;
       }
-      break;
+    } else if (!strcmp(argv[i], "-t")) {
+      if (argc > (i+1)) {
+        unsigned char *fromstr, *tostr;
+        fromstr = strtok(argv[i+1], "-");
+        tostr = strtok(NULL, "-");
+        if (!fromstr || !tostr)
+          goto exit_usage;
 
-    case 't':
-      if (parse_time(optarg, &to) < 0) {
-	fprintf(stderr, "Could not parse to time: %s\n", optarg);
-	usage();
-	retval = EXIT_FAILURE;
-	goto exit;
+        if ((parse_time(fromstr, &mp3cuts[mp3cuts_cnt].from) < 0) ||
+            (parse_time(tostr, &mp3cuts[mp3cuts_cnt].to) < 0))
+          goto exit_usage;
       }
-      break;
-
-    case 'd':
-      if (parse_time(optarg, &duration) < 0) {
-	fprintf(stderr, "Could not parse duration time: %s\n", optarg);
-	usage();
-	retval = EXIT_FAILURE;
-	goto exit;
+      i++;
+    } else {
+      if (mp3cuts_cnt >= max_cuts) {
+        fprintf(stderr, "mp3cut cannot handle more than %d cuts\n", max_cuts);
+        return -1;
       }
-      break;
-
-    case 'o':
-      strncpy(outfilename, optarg, sizeof(outfilename));
-      outfilename[sizeof(outfilename) - 1] = '\0';
-      break;
       
-    default:
-      usage();
-      retval = EXIT_FAILURE;
-      goto exit;
+      strncpy(mp3cuts[mp3cuts_cnt].filename, argv[i], sizeof(mp3cuts[0].filename));
+      mp3cuts[mp3cuts_cnt].filename[sizeof(mp3cuts[0].filename) - 1] = '\0';
+      mp3cuts_cnt++;
     }
   }
 
-  if ((optind == argc) || (argv[optind] == NULL)) {
-    usage();
+  if (mp3cuts_cnt == 0)
+    goto exit_usage;
+
+  return mp3cuts_cnt;
+
+ exit_usage:
+  usage();
+  return 0;
+}
+
+int main(int argc, char *argv[]) {
+  int retval = EXIT_SUCCESS;
+  char outfilename[256];
+  mp3cut_t mp3cuts[256];
+  unsigned int mp3cuts_cnt = 0;
+
+  memset(outfilename, '\0', sizeof(outfilename));
+
+  mp3cuts_cnt = parse_arguments(mp3cuts, 256,
+                                outfilename, sizeof(outfilename),
+                                argc, argv)  ;
+  if (mp3cuts_cnt <= 0) {
     retval = EXIT_FAILURE;
     goto exit;
   }
-  mp3filename = argv[optind];
-
+  
   if (strlen(outfilename) == 0) {
+    char *mp3filename = mp3cuts[0].filename;
+    char *basename = strrchr(mp3filename, '/');
+    if (basename)
+      mp3filename = basename + 1;
     char *dot = strrchr(mp3filename, '.');
     char buf[256];
     unsigned int len = dot ? (dot - mp3filename) : strlen(mp3filename);
     len = min(len + 1, sizeof(buf));
     strncpy(buf, mp3filename, len);
     buf[len - 1] = '\0';
-    snprintf(outfilename, sizeof(outfilename), "%s.out%s\n", buf, dot ? dot : ".mp3");
+    snprintf(outfilename, sizeof(outfilename), "%s.out%s", buf, dot ? dot : ".mp3");
   }
 
-  char frombuf[256], tobuf[256], durationbuf[256];
-  format_time(from, frombuf, sizeof(frombuf));
-  format_time(to, tobuf, sizeof(tobuf));
-  format_time(duration, durationbuf, sizeof(durationbuf));
-
-  if (duration != 0)
-    to = from + duration;
-
-  if ((to != 0) && (to <= from)) {
-    fprintf(stderr, "Can not cut mp3 from %s to %s\n", frombuf, tobuf);
-    retval = EXIT_FAILURE;
-    goto exit;
-  }
-
-  /*M
-    Open the MP3 file.
-  **/
-  file_t mp3file;
-  if (!file_open_read(&mp3file, mp3filename)) {
-    fprintf(stderr, "Could not open mp3 file: %s\n", mp3filename);
-    retval = EXIT_FAILURE;
-    return 0;
-  }
-      
-  aq_t qin;
-  aq_init(&qin);
+  /* initialize the output stream */
   aq_t qout;
   aq_init(&qout);
-  
-  /*M
-    Open the output MP3 file.
-  **/
   file_t outfile;
   if (!file_open_write(&outfile, outfilename)) {
     fprintf(stderr, "Could not open mp3 file: %s\n", outfilename);
-    file_close(&mp3file);
     retval = EXIT_FAILURE;
     goto exit;
   }
 
-  unsigned long current = 0;
+  printf("Writing to %s\n", outfilename);
 
-  /*M
-    Read in the input file
+  /* cycle through the mp3cuts */
+  int i;
+  for (i = 0; i < mp3cuts_cnt; i++) {
+    file_t mp3file;
+    if (!file_open_read(&mp3file, mp3cuts[i].filename)) {
+      fprintf(stderr, "Could not open mp3 file: %s\n", mp3cuts[i].filename);
+      retval = EXIT_FAILURE;
+      file_close(&outfile);
+      aq_destroy(&qout);
+      goto exit;
+    }
+
+    char fromstr[256], tostr[256];
+    format_time(mp3cuts[i].from, fromstr, sizeof(fromstr));
+    format_time(mp3cuts[i].to, tostr, sizeof(tostr));
+    printf("Extracting %s-%s from %s\n", fromstr, tostr, mp3cuts[i].filename);
     
-    Read while current < end or till the end of the file if it's the last track.
-  **/
-  while (current <= to) {
-    mp3_frame_t frame;
-    if (mp3_next_frame(&mp3file, &frame) > 0) {
-      if (aq_add_frame(&qin, &frame)) { 
-	adu_t *adu = aq_get_adu(&qin);
-	assert(adu != NULL);
-
-	if (current >= from) {
-	  if (aq_add_adu(&qout, adu)) {
-	    mp3_frame_t *frame_out = aq_get_frame(&qout);
-	    assert(frame_out != NULL);
-	    
-	    memset(frame_out->raw, 0, 4 + frame_out->si_size);
-	    if (!mp3_fill_hdr(frame_out) ||
-		!mp3_fill_si(frame_out) ||
-		(mp3_write_frame(&outfile, frame_out) <= 0)) {
-	      fprintf(stderr, "Could not write frame\n");
-	      file_close(&mp3file);
-	      file_close(&outfile);
-	      retval = 1;
-	      goto exit;
-	    }
-	    
-	    free(frame_out);
-	  }
-	}
-	
-	free(adu);
+    aq_t qin;
+    aq_init(&qin);
+    
+    unsigned long long current = 0;
+    int finished = 0;
+    
+    while (!finished) {
+      if (mp3cuts[i].to && ((current / 1000) >= mp3cuts[i].to)) {
+        finished = 1;
+        break;
       }
       
-      current += frame.usec / 1000;
+      mp3_frame_t frame;
+      if (mp3_next_frame(&mp3file, &frame) > 0) {
+        if (aq_add_frame(&qin, &frame)) { 
+          adu_t *adu = aq_get_adu(&qin);
+          assert(adu != NULL);
+          
+          if ((current / 1000) >= mp3cuts[i].from) {
+            char curstr[256];
+            format_time(current / 1000, curstr, sizeof(curstr));
+            // printf("current %s\n", curstr);
+            
+            if (aq_add_adu(&qout, adu)) {
+              mp3_frame_t *frame_out = aq_get_frame(&qout);
+              assert(frame_out != NULL);
+              
+              memset(frame_out->raw, 0, 4 + frame_out->si_size);
+              if (!mp3_fill_hdr(frame_out) ||
+                  !mp3_fill_si(frame_out) ||
+                  (mp3_write_frame(&outfile, frame_out) <= 0)) {
+                fprintf(stderr, "Could not write frame\n");
+                file_close(&mp3file);
+                file_close(&outfile);
+                retval = 1;
+                goto exit;
+              }
+              
+              free(frame_out);
+            }
+          }
+
+          current += adu->usec;
+          free(adu);
+          
+        } else {
+          finished = 1;
+        }
+      } else {
+        finished = 1;
+      }
     }
+
+    file_close(&mp3file);
+    aq_destroy(&qin);
   }
   
-  /*M
-    Close the output file.
-  **/
   file_close(&outfile);
   aq_destroy(&qout);
   
   fprintf(stderr, "%s written\n", outfilename);
 
-  /*M
-    Close the input file.
-  **/
-  file_close(&mp3file);
-  aq_destroy(&qin);
-    
-
-  /*M
-    Cleanup the data structures.
-  **/
  exit:
   return retval;
 }
-
-/*M
-**/
