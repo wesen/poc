@@ -67,8 +67,8 @@ typedef struct http_client_s {
 /*M
   \emph{Clients array.}
 **/
-http_client_t *client;
-int client_num;
+http_client_t *client = NULL;
+int client_num = 0;
 
 int client_http(struct http_client_s *client);
 void client_check(void);
@@ -571,9 +571,11 @@ exit:
    /*M
      Close all HTTP client connections.
    **/
-   for (j = 0; j < clients; j++)
-      client_close(client + j);
-
+   if (client != NULL) {
+     for (j = 0; j < clients; j++)
+       client_close(client + j);
+   }
+     
    if (close(sock) < 0)
       perror("close");
 
