@@ -1,0 +1,77 @@
+.TH MP3CUT 1 "February 2005" "" "User Command"
+.SH NAME
+.B mp3cut 
+\- cut and assemble MP3 files
+.SH SYNOPSIS
+.B mp3cut
+.RB [
+.I \-o outputfile
+.RB ]
+.RB [
+.I \-T title
+.RB ]
+.RB [
+.I \-A artist
+.RB ]
+.RB [
+.I \-N album\-name
+.RB ]
+.RB [
+.I -t [hh:]mm:ss[+ms]-[hh:]mm:ss[+ms]
+.RB ]
+.I mp3file
+.RB [ [
+.I -t ...
+.RB ]
+.I mp3file1
+.RB ... ]
+.br
+.SH DESCRIPTION
+The
+.B mp3cut
+utility cuts and assembles MP3 files according to the time
+specifications given on the command line. The mp3 output is written
+to the outputfile. If no
+.B outputfile
+is given on the command\-line, the name for the outputfile is created 
+from the name of the first mp3 file by adding 
+.B output.mp3
+at the end. The
+.B \-t
+flag specifies which part of the mp3 file following it will be
+extracted.
+.SH OPTIONS
+.IP "-o outputfile"
+Specify where the output is to be written.
+.IP "-T title"
+Specify the title ID3 tag for the output file.
+.IP "-A artist"
+Specify the artist ID3 tag for the output file.
+.IP "-N album\-name"
+Specify the album name ID3 tag for the output file.
+.IP "-t [hh:]mm:ss[+ms]-[hh:]mm:ss[+ms]"
+Specify which part of the following mp3file will be included in the
+output file.
+
+      hh  = hours
+      mm  = minutes
+      ss  = seconds
+      ms  = milliseconds
+
+If the starting time is omitted,
+.B 00:00:00+00
+is used as starting time. If the ending time is omitted, the end of
+the MP3 file is used as ending time.
+.SH EXAMPLES
+.IP "mp3cut -o output.mp3 -t 23:42+500-01:23:42+750 input.mp3"
+Cut the segment from 23 minutes, 42 seconds and 500
+milliseconds to 1 hour, 23 minutes, 42 seconds and 750 milliseconds
+from input.mp3 and write the output to output.mp3.
+
+.IP "mp3cut -t 00:01-00:02 input1.mp3 -t -15:23 input2.mp3 -t 9:87+500- input3.mp3"
+Append the segments from input1.mp3, input2.mpt and input3.mp3 and
+write the output to input1.output.mp3.
+
+.SH AUTHORS
+Manuel Odendahl <manuel@bl0rg.net>, Florian Wesch <dividuum@bl0rg.net>
+
