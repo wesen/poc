@@ -110,6 +110,8 @@ void fec_group_insert_pkt(fec_group_t *group,
   /* sanity checks, no real error handling yet */
   assert(pkt->hdr.packet_seq < group->fec_n);
   assert(pkt->hdr.len <= group->fec_len);
+  /* XXX das kann passieren wenn der streamer restartet, und
+     versehentlich die selbe groupseqnumber erwischt. */
   assert(pkt->hdr.group_tstamp == group->tstamp);
 
   /* check if packet already received */
