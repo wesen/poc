@@ -198,6 +198,17 @@ CLIENTS_OBJS += $(POB_FEC_OBJS)
 clients-clean:
 	- rm -f $(CLIENTS) $(CLIENTS_EXE) $(CLIENTS_OBJS)
 
+# Tools
+MP3TOADU_OBJS := $(UTILS_OBJS) $(MP3_OBJS) mp3toadu.o
+include mp3toadu.d
+mp3toadu: $(MP3TOADU_OBJS)
+	$(CC) $(CFLAGS) -o $@ $(MP3TOADU_OBJS) $(LDFLAGS) $(LIBS)
+
+ADUTOMP3_OBJS := $(UTILS_OBJS) $(MP3_OBJS) adutomp3.o
+include adutomp3.d
+adutomp3: $(ADUTOMP3_OBJS)
+	$(CC) $(CFLAGS) -o $@ $(ADUTOMP3_OBJS) $(LDFLAGS) $(LIBS)
+
 # Tests
 bvtest: bv.c bv.h
 	$(CC) $(CFLAGS) -o $@ -DBV_TEST bv.c $(LDFLAGS)
