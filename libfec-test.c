@@ -72,8 +72,8 @@ int main(int argc, char *argv[]) {
         unsigned char buf[8192];
         unsigned int len;
         len = libfec_decode(group, buf, i, sizeof(buf));
-        fprintf(stderr, "decode %d, len %d\n", i, len);
-        hexdump(buf, len);
+        // fprintf(stderr, "decode %d, len %d\n", i, len);
+        // hexdump(buf, len);
         if (len) {
           libfec_write_adu(buf, len);
         }

@@ -41,7 +41,6 @@ int main(int argc, char *argv[]) {
 
       unsigned char len[2];
       unsigned char *ptr = len;
-      fprintf(stderr, "size: %d\n", adu->adu_size);
       UINT16_PACK(ptr, adu->adu_size);
       ret = write(STDOUT_FILENO, len, 2);
       assert(ret == 2);

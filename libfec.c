@@ -69,6 +69,10 @@ int libfec_read_adu(unsigned char *dst, unsigned int len) {
       adu_t *adu = aq_get_adu(&qin);
       assert(adu != NULL);
 
+      if (adu->adu_size == 0) {
+        free(adu);
+        continue;
+      }
       unsigned int retlen = min(len, adu->adu_size);
       memcpy(dst, adu->raw, retlen);
 
