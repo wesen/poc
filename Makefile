@@ -351,7 +351,7 @@ clean: tests-clean \
        dep-clean
 
 USER  ?= $(GROUP)
-GROUP ?= $(GROUP)
+#GROUP ?= $(GROUP)
 PREFIX:= /usr/local
 install: install-man
 	mkdir -p $(DESTDIR)/$(PREFIX)/bin
