@@ -321,7 +321,7 @@ int pob_mainloop(int sock, int quiet) {
 static void usage(void) {
   fprintf(stderr, "Usage: ./pob [-s address] [-p port] [-b size] [-q]\n");
   
-  fprintf(stderr, "\t-s address : destination address (default 224.0.1.23)\n");
+  fprintf(stderr, "\t-s address : destination address (default 0.0.0.0)\n");
   fprintf(stderr, "\t-p port    : destination port (default 1500)\n");
   fprintf(stderr, "\t-b size    : maximal number of fec groups in buffer (default 16)\n");
   fprintf(stderr, "\t-q         : quiet\n");
@@ -378,7 +378,7 @@ int main(int argc, char *argv[]) {
 #ifdef WITH_IPV6
     address = strdup("ff02::4");
 #else
-    address = strdup("224.0.1.23");
+    address = strdup("0.0.0.0");
 #endif /* WITH_IPV6 */
   }
   

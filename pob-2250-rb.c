@@ -308,7 +308,7 @@ static void usage(void) {
   fprintf(stderr, "[-c cert]");
 #endif
   fprintf(stderr, "\n");
-  fprintf(stderr, "\t-s address : destination address (default 224.0.1.23 or ff02::4)\n");
+  fprintf(stderr, "\t-s address : destination address (default 0.0.0.0)\n");
   fprintf(stderr, "\t-p port    : destination port (default 1500)\n");
   fprintf(stderr, "\t-b size    : maximal number of packets in buffer (default 128)\n");
   fprintf(stderr, "\t-q         : quiet\n");
@@ -421,7 +421,7 @@ int main(int argc, char *argv[]) {
 #ifdef WITH_IPV6
     address = strdup("ff02::4");
 #else
-    address = strdup("224.0.1.23");
+    address = strdup("0.0.0.0");
 #endif /* WITH_IPV6 */
   }
 
