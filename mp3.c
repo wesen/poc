@@ -50,8 +50,7 @@ void mp3_calc_hdr(mp3_frame_t *frame) {
   if (frame->protected == 0)
     frame->frame_data_size -= 2;
 
-  frame->usec = (double)frame->frame_size * 8 * 1000.0 /
-    ((double)frame->bitrate);
+  frame->usec = (double)frame->frame_size * 8 * 1000.0 / ((double)frame->bitrate);
 }
 
 unsigned long mp3_frame_size(mp3_frame_t *frame) {

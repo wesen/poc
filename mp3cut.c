@@ -6,10 +6,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#ifdef NEED_GETOPT_H__
-#include <getopt.h>
-#endif /* NEED_GETOPT_H__ */
-
 #include "aq.h"
 #include "file.h"
 #include "mp3.h"
@@ -40,7 +36,7 @@ static int parse_time(const char *str, unsigned long *time) {
   
   *time = 0;
   
-  char *token, *token2;
+  char *token;
   unsigned long numbers[4];
   unsigned long cnt = 0;
 
@@ -140,12 +136,24 @@ static unsigned int parse_arguments(mp3cut_t *mp3cuts, unsigned int max_cuts,
         unsigned char *fromstr, *tostr;
         fromstr = strtok(argv[i+1], "-");
         tostr = strtok(NULL, "-");
-        if (!fromstr || !tostr)
+        if (!fromstr && !tostr)
           goto exit_usage;
 
-        if ((parse_time(fromstr, &mp3cuts[mp3cuts_cnt].from) < 0) ||
-            (parse_time(tostr, &mp3cuts[mp3cuts_cnt].to) < 0))
-          goto exit_usage;
+	if (fromstr && (strlen(fromstr) > 0)) {
+	  if (parse_time(fromstr, &mp3cuts[mp3cuts_cnt].from) < 0) {
+	    goto exit_usage;
+	  }
+	} else {
+	  mp3cuts[mp3cuts_cnt].from = 0;
+	}
+
+	if (tostr && (strlen(tostr) > 0)) {
+	  if (parse_time(tostr, &mp3cuts[mp3cuts_cnt].to) < 0) {
+	    goto exit_usage;
+	  }
+	} else {
+	  mp3cuts[mp3cuts_cnt].to = 0;
+	}
       }
       i++;
     } else {
@@ -240,9 +248,10 @@ int main(int argc, char *argv[]) {
         finished = 1;
         break;
       }
-      
+
       mp3_frame_t frame;
-      if (mp3_next_frame(&mp3file, &frame) > 0) {
+      int ret;
+      if ((ret = mp3_next_frame(&mp3file, &frame)) > 0) {
         if (aq_add_frame(&qin, &frame)) { 
           adu_t *adu = aq_get_adu(&qin);
           assert(adu != NULL);
@@ -250,7 +259,6 @@ int main(int argc, char *argv[]) {
           if ((current / 1000) >= mp3cuts[i].from) {
             char curstr[256];
             format_time(current / 1000, curstr, sizeof(curstr));
-            // printf("current %s\n", curstr);
             
             if (aq_add_adu(&qout, adu)) {
               mp3_frame_t *frame_out = aq_get_frame(&qout);
@@ -275,10 +283,27 @@ int main(int argc, char *argv[]) {
           free(adu);
           
         } else {
-          finished = 1;
-        }
+	  /* ignore error */
+	}
       } else {
-        finished = 1;
+	finished = 1;
+	if (ret != EEOF) {
+	  fprintf(stderr, "Error reading from %s: %d\n", mp3cuts[i].filename, ret);
+	} else {
+	  if ((current / 1000) <= mp3cuts[i].from) {
+	    fprintf(stderr, "Could not extract data from %s, file too short\n",
+		    mp3cuts[i].filename);
+	  } else {
+	    if (mp3cuts[i].to == 0)
+	      continue;
+	  
+	    char timebuf[256];
+	    unsigned long duration = (current / 1000) - mp3cuts[i].from;
+	    format_time(duration, timebuf, sizeof(timebuf));
+	    fprintf(stderr, "Could only extract %s from %s, file too short\n",
+		    timebuf, mp3cuts[i].filename);
+	  }
+	}
       }
     }
 

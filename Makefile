@@ -38,6 +38,10 @@ mp3cut: mp3-read.o mp3-write.o mp3.o mp3cut.o bv.o mp3.h bv.h aq.o file.o dlist.
 	$(CC) $(CFLAGS) -o $@  mp3-read.o mp3-write.o mp3.o mp3cut.o bv.o aq.o file.o dlist.o \
         $(LDFLAGS) $(LIBS)
 
+mp3length: mp3-read.o mp3-write.o mp3.o mp3length.o bv.o mp3.h bv.h aq.o file.o dlist.o
+	$(CC) $(CFLAGS) -o $@  mp3-read.o mp3-write.o mp3.o mp3length.o bv.o aq.o file.o dlist.o \
+        $(LDFLAGS) $(LIBS)
+
 aq.o: aq.c aq.h conf.h
 buf.o: buf.c buf.h conf.h
 bv.o: bv.c bv.h conf.h
