@@ -53,16 +53,16 @@ int net_ip4_resolve_hostname(const char *hostname,
   to use the multicast TTL ttl and sets the datagrams to loop back.
   Returns the filedescriptor of the socket, or -1 on error.
 **/
-static int net_udp4_socket(struct sockaddr_in *saddr,
-                           unsigned short port,
-                           unsigned char ttl) {
+int net_udp4_socket(struct sockaddr_in *saddr,
+		    unsigned short port,
+		    unsigned char ttl) {
   assert(saddr != NULL);
   
   /*M
     Create UDP socket.
   **/
-  int msock;
-  if ((msock = socket(PF_INET, SOCK_DGRAM, 0)) < 0) {
+  int fd;
+  if ((fd = socket(PF_INET, SOCK_DGRAM, 0)) < 0) {
     perror("socket");
     return -1;
   }
@@ -71,11 +71,19 @@ static int net_udp4_socket(struct sockaddr_in *saddr,
     Set socket to reuse addresses.
   **/
   int on = 1;
-  if (setsockopt(msock, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) < 0) {
+  if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) < 0) {
     perror("setsockopt");
     goto error;
   }
 
+  if (saddr->sin_addr.s_addr == INADDR_BROADCAST) {
+    static int allow = 1;
+    if (setsockopt(fd, SOL_SOCKET, SO_BROADCAST, (char*)&allow, sizeof(allow)) == -1) {
+      perror("setsockopt");
+      goto error;
+    }
+  }
+    
   saddr->sin_family = AF_INET;
   saddr->sin_port   = htons(port);
 
@@ -85,11 +93,11 @@ static int net_udp4_socket(struct sockaddr_in *saddr,
   **/
   if (IN_MULTICAST(htonl(saddr->sin_addr.s_addr))) {
     unsigned char loop = 1;
-    if ((setsockopt(msock,
+    if ((setsockopt(fd,
                     IPPROTO_IP,
                     IP_MULTICAST_TTL,
                     &ttl, sizeof(ttl)) < 0) ||
-        (setsockopt(msock,
+        (setsockopt(fd,
                     IPPROTO_IP,
                     IP_MULTICAST_LOOP,
                     &loop, sizeof(loop)) < 0)) {
@@ -98,10 +106,10 @@ static int net_udp4_socket(struct sockaddr_in *saddr,
     }
   }
 
-  return msock;
+  return fd;
 
  error:
-  if (close(msock) < 0)
+  if (close(fd) < 0)
     perror("close");
   return -1;
 }
@@ -122,22 +130,30 @@ int net_udp4_send_socket(char *hostname,
   /*M
     Create udp socket.
   **/
-  int msock;
-  if ((msock = net_udp4_socket(&saddr, port, ttl)) < 0)
+  int fd;
+  if ((fd = net_udp4_socket(&saddr, port, ttl)) < 0)
     return -1;
 
+  if (saddr.sin_addr.s_addr == INADDR_BROADCAST) {
+    static int allow = 1;
+    if (setsockopt(fd, SOL_SOCKET, SO_BROADCAST, (char*)&allow, sizeof(allow)) == -1) {
+      perror("setsockopt");
+      goto error;
+    }
+  }
+  
   /*M
     Connect to hostname.
   **/
-  if (connect(msock, (struct sockaddr *)&saddr, sizeof(saddr)) < 0) {
+  if (connect(fd, (struct sockaddr *)&saddr, sizeof(saddr)) < 0) {
     perror("connect");
     goto error;
   }
 
-  return msock;
+  return fd;
 
  error:
-  if (close(msock) < 0)
+  if (close(fd) < 0)
     perror("close");
   return -1;
 }
@@ -158,14 +174,14 @@ int net_udp4_recv_socket(char *hostname,
   /*M
     Create udp socket.
   **/
-  int msock;
-  if ((msock = net_udp4_socket(&addr, port, 1)) < 0)
+  int fd;
+  if ((fd = net_udp4_socket(&addr, port, 1)) < 0)
     return -1;
 
   /*M
     Bind to hostname.
   **/
-  if (bind(msock, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+  if (bind(fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
     perror("bind");
     goto error;
   }
@@ -178,7 +194,7 @@ int net_udp4_recv_socket(char *hostname,
     mreq.imr_multiaddr.s_addr = addr.sin_addr.s_addr;
     mreq.imr_interface.s_addr = htonl(INADDR_ANY);
 
-    if (setsockopt(msock,
+    if (setsockopt(fd,
                    IPPROTO_IP,
                    IP_ADD_MEMBERSHIP,
                    &mreq, sizeof(mreq)) < 0) {
@@ -187,10 +203,10 @@ int net_udp4_recv_socket(char *hostname,
     }
   }
 
-  return msock;
+  return fd;
 
  error:
-  if (close(msock) < 0)
+  if (close(fd) < 0)
     perror("close");
   return -1;
 }

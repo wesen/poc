@@ -30,13 +30,7 @@ void fec_pkt_init(fec_pkt_t *pkt) {
   pkt->payload = pkt->data + FEC_PKT_HDR_SIZE;
 }
 
-/*M
-  \emph{Send a FEC packet to filedescriptor using send.}
-
-  Fills the packet data buffer with the packed header. Sequence
-  number fields are not incremented, but have to be set by the application.
-**/
-ssize_t fec_pkt_send(fec_pkt_t *pkt, int fd) {
+static void fec_pkt_pack(fec_pkt_t *pkt) {
   assert(pkt != NULL);
 
   unsigned char *ptr = pkt->data;
@@ -53,11 +47,24 @@ ssize_t fec_pkt_send(fec_pkt_t *pkt, int fd) {
   UINT16_PACK(ptr, pkt->hdr.fec_len);  
   UINT16_PACK(ptr, pkt->hdr.len);
   UINT32_PACK(ptr, pkt->hdr.group_tstamp);
+}
 
-  /*M
-    Send the packet
-  **/
+/*M
+  \emph{Send a FEC packet to filedescriptor using send.}
+
+  Fills the packet data buffer with the packed header. Sequence
+  number fields are not incremented, but have to be set by the application.
+**/
+ssize_t fec_pkt_send(fec_pkt_t *pkt, int fd) {
+  assert(pkt != NULL);
+  fec_pkt_pack(pkt);
   return send(fd, pkt->data, FEC_PKT_HDR_SIZE + pkt->hdr.len, 0);
+}
+
+ssize_t fec_pkt_sendto(fec_pkt_t *pkt, int fd, struct sockaddr *to, socklen_t tolen) {
+  assert(pkt != NULL);
+  fec_pkt_pack(pkt);
+  return sendto(fd, pkt->data, FEC_PKT_HDR_SIZE + pkt->hdr.len, 0, to, tolen);
 }
 
 /*M

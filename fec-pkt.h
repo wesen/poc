@@ -6,6 +6,7 @@
 #define FEC_PKT_H__
 
 #include <sys/types.h>
+#include <sys/socket.h>
 
 #define FEC_PKT_MAX_GROUP_SEQ 255
 #define FEC_PKT_MAX_PACKET_SEQ 255
@@ -60,6 +61,7 @@ typedef struct fec_pkt_s {
 void fec_pkt_init(/*@out@*/ fec_pkt_t *pkt);
 
 ssize_t fec_pkt_send(fec_pkt_t *pkt, int fd);
+ssize_t fec_pkt_sendto(fec_pkt_t *pkt, int fd, struct sockaddr *to, socklen_t tolen);
 ssize_t fec_pkt_read(fec_pkt_t *pkt, int fd);
 
 #endif /* FEC_PKT_H__ */

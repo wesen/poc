@@ -12,6 +12,9 @@ int net_ip4_resolve_hostname(const char *hostname,
                              unsigned char ip[4],
                              struct sockaddr_in *saddr);
 
+int net_udp4_socket(struct sockaddr_in *saddr,
+		    unsigned short port,
+		    unsigned char ttl);
 int net_udp4_send_socket(char *hostname,
                          unsigned short port,
                          unsigned char ttl);
