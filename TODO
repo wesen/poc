@@ -92,12 +92,16 @@ X OGG Vorbis support
   X Manpages
   X id3tag support in mp3cue und mp3cut
   X print information in servers and clients not so intensive
-  - check errors in mp3cue (?)
+  X check errors in mp3cue (?)
   X variable number of clients in poc-http
   X kbits anzeig in poc-*
   X Zeitanzeige in poc-*
 
 ---- 3te release
+
+BUG:
+  - pob-fec: fec-group.c:113: fec_group_insert_pkt: Assertion
+    `pkt->hdr.group_tstamp == group->tstamp' failed.
 
   - id3tag support in poc-http (UDP socket?)
 
