@@ -192,12 +192,11 @@ int fec_group_decode_to_adus(fec_group_t *group,
       memcpy(adu.raw,
              group->buf + i * group->fec_len,
              group->fec_len);
-      
+
       if (!mp3_unpack(&adu)) {
         fprintf(stderr, "Error unpacking the mp3 adu\n");
         return 0;
       }
-      
       aq_add_adu(aq, &adu);
     }
   } else {

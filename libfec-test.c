@@ -37,8 +37,8 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
-  int fec_k = 16;
-  int fec_n = 32;
+  int fec_k = 20;
+  int fec_n = 25;
   libfec_init(argv[1], "-");
   
   fec_encode_t *encode = libfec_new_encode(fec_k, fec_n);
@@ -52,8 +52,6 @@ int main(int argc, char *argv[]) {
     assert(ret);
 
     static int adu_cnt = 0;
-    fprintf(stderr, "adu_cnt %d\n", adu_cnt);
-    
     /* decode */
     if (++adu_cnt == fec_k) {
       int max_length = libfec_max_length(encode);

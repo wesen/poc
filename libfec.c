@@ -73,7 +73,7 @@ int libfec_read_adu(unsigned char *dst, unsigned int len) {
         free(adu);
         continue;
       }
-      unsigned int retlen = min(len, adu->adu_size);
+      unsigned int retlen = min(len, mp3_frame_size(adu));
       memcpy(dst, adu->raw, retlen);
 
       free(adu);
@@ -89,8 +89,6 @@ void libfec_write_adu(unsigned char *buf, unsigned int len) {
   assert(buf != NULL);
   assert(initialized);
   assert(outfile_open);
-
-  fprintf(stderr, "write adu %p, len %d\n", buf, len);
 
   adu_t adu;
   memcpy(adu.raw, buf, len);
@@ -156,7 +154,12 @@ unsigned int libfec_decode(fec_decode_t *group,
     fec_group_decode(group);
 
   if (group->decoded) {
-    unsigned int retlen = min(len, group->fec_len);
+    unsigned int retlen;
+    if (group->lengths[idx] > 0) {
+      retlen = min(len, group->lengths[idx]);
+    } else {
+      retlen = min(len, group->fec_len);
+    }
     memcpy(dst, group->buf + idx * group->fec_len, retlen);
     return retlen;
   } else {
