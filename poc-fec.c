@@ -56,7 +56,7 @@ static void sig_int(int signo) {
 
 /*M
 **/
-int poc_encoder(int sock, char *filename) {
+int poc_encoder(int sock, struct sockaddr_in *saddr, char *filename) {
   int retval = 1;
   
   /*M
@@ -167,7 +167,7 @@ int poc_encoder(int sock, char *filename) {
 #endif
             
             /* send rtp packet */
-            if (fec_pkt_send(&pkt, sock) < 0) {
+            if (fec_pkt_sendto(&pkt, sock, (struct sockaddr *)saddr, sizeof(*saddr)) < 0) {
               perror("Error while sending packet");
 
               retval = 0;
@@ -388,14 +388,14 @@ int main(int argc, char *argv[]) {
     Open the sending socket.
   **/
   int sock;
-#ifdef WITH_IPV6
-   if (use_ipv6)
-     sock = net_udp6_send_socket(address, port, ttl);
-   else
-     sock = net_udp4_send_socket(address, port, ttl);
-#else
-   sock  = net_udp4_send_socket(address, port, ttl);
-#endif /* WITH_IPV6 */
+  struct sockaddr_in saddr;
+  if (!net_ip4_resolve_hostname(address, port, NULL, &saddr)) {
+    fprintf(stderr, "Could not resolve %s\n", address);
+    retval = EXIT_FAILURE;
+    goto exit;
+  }
+
+  sock  = net_udp4_socket(&saddr, port, ttl);
   if (sock < 0) {
     fprintf(stderr, "Could not open socket\n");
     retval = EXIT_FAILURE;
@@ -414,7 +414,7 @@ int main(int argc, char *argv[]) {
     strncpy(filename, argv[i], MAX_FILENAME - 1);
     filename[MAX_FILENAME - 1] = '\0';
     
-    if (!poc_encoder(sock, filename))
+    if (!poc_encoder(sock, &saddr, filename))
       continue;
   }
   
