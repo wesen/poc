@@ -5,7 +5,7 @@ SRC_URI="http://bl0rg.net/software/poc/poc-${PV}.tar.gz"
 SLOT="0"
 KEYWORDS="x86"
 DEPEND=""
-S="${WORKDIR}/poc-${PV}"
+S="${WORKDIR}/${PN}-${PV}"
 
 src_compile() {
 		emake || die "emake failed"
