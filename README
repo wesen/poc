@@ -1,10 +1,25 @@
 INTRODUCTION 
 ============
 
-poc is a suite of MP3 streaming programs. It can stream MP3s over HTTP,
-RTP (RFC 2250 and RFC 3119) and a special protocol to enable the use
-of Forward Error Correction to protect the MP3 stream against packet
-loss.
+poc is a suite of MP3 tools and MP3 streaming programs. It can stream
+MP3s over HTTP, RTP (RFC 2250 and RFC 3119) and a special protocol to
+enable the use of Forward Error Correction to protect the MP3 stream
+against packet loss. It can also stream OGGs over HTTP.
+
+In addition to the streaming programs, poc contains two MP3 tools:
+mp3cue and mp3cut. mp3cue can cut a big MP3 file according to a
+tracklisting contained in a .cue file. mp3cut can split and
+concatenate MP3 files according to time slices given on the command
+line.
+
+INSTALLATION
+============
+
+All the tools in the poc package can be compiled using GNU make.
+The tools have been tested under MacOSX, Cygwin and Linux.
+
+STREAMING
+=========
 
 RTP is a protocol used mostly on top of UDP to transfer multimedia data. It
 can be used over multicast (all the UDP servers use a multicast address as
@@ -23,6 +38,7 @@ method designed by Luigi Rizzo.
 
 The servers are:
     - poc-http to stream over HTTP
+    - pogg-http to stream OGGs over HTTP
     - poc-2250 to stream over RTP RFC 2250
     - poc-3119 to stream over RTP RFC 3119
     - poc-fec to stream using FEC
@@ -31,20 +47,44 @@ The servers accept a list of MP3 files on the command line and stream them
 sequentially. They can also accept input from stdin using - as a filename.
 
 The clients are:
-    - pob-2250 to receive a RTP RFC 2250 stream into a linked list buffer
-    - pob-2250-rb to receive a RTP RFC 2250 stream into a ring buffer
-      (preferred)
-    - pob-3119 to receive a RTP RFC 3119 stream into a linked list buffer
-    - pob-3119-rb to receive a RTP RFC 3119 stream into a ring buffer
-      (preferred)
-    - pob-fec to receive a FEC protected stream into a ring buffer
+    - pob-2250 to receive a RTP RFC 2250 stream 
+    - pob-3119 to receive a RTP RFC 3119 stream 
+    - pob-fec to receive a FEC protected stream 
 
 The clients output the mp3 stream to stdout, so it can be piped into a mp3
 decoder:
-     ./pob-3119-rb | mpg123 -
+     ./pob-3119 | mpg123 -
 with buffering:
-     ./pob-3119-rb | mpg123 -b 2048 -
+     ./pob-3119 | mpg123 -b 2048 -
+or it can be sent to a conventional HTTP server:
+     ./pob-fec | ./poc-http -
 
+MP3 TOOLS
+=========
+
+mp3cue is a tool that can split a big MP3 file according to the
+tracklisting in a .cue file. The command line arguments are very
+simple. To split the big foobar.mp3 file according to foobar.cue:
+
+     ./mp3cue -c foobar.cue foobar.mp3
+
+mp3cue will split foobar.mp3 in multiple mp3 files according to the
+cue file, and set their id3 tags to the information contained in the
+cue file. mp3cue splits on ADU boundary in order to avoid audio
+glitches and cracks.
+
+mp3cut is a command-line tool to split and concatenate mp3 files. The
+splitting is done using ADUs to avoid audio glitches and tracks. To
+extract the first 10 seconds of file foobar.mp3 and write it into
+output.mp3:
+
+     ./mp3cut -o output.mp3 -t -10:00 foobar.mp3
+
+To extract the second minute from bla1.mp3 and concatenate the second
+minute of bla2.mp3, and then write the output to output.mp3:
+
+     ./mp3cut -o output.mp3 -t 01:00-02:00 bla1.mp3 -t 01:00-02:00 bla2.mp3
+     
 NOTE
 ====
 
