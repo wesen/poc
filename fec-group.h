@@ -49,6 +49,9 @@ typedef struct fec_group_s {
   **/
   unsigned char *buf;
 
+  /* Length of the inserted packets. */
+  unsigned int *lengths;
+
   int decoded;
 } fec_group_t;
 

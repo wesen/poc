@@ -31,15 +31,15 @@ void fec_group_init(fec_group_t *group,
   group->fec_len = fec_len;
   group->rcvd_pkts = 0;
 
-  group->pkts = malloc(sizeof(unsigned char) * fec_n);
-  assert(group->pkts != NULL);
   group->buf = malloc(sizeof(unsigned char) * fec_n * fec_len);
   assert(group->buf != NULL);
+  group->lengths = malloc(sizeof(unsigned int) * fec_n);
+  assert(group->lengths != NULL);
 
   /* init pointers */
   int i;
   for (i = 0; i < fec_n; i++) {
-    group->pkts[i] = 0;
+    group->lengths[i] = 0;
   }
 
   group->decoded = 0;
@@ -56,9 +56,9 @@ void fec_group_destroy(fec_group_t *group) {
     group->buf = NULL;
   }
   
-  if (group->pkts) {
-    free(group->pkts);
-    group->pkts = NULL;
+  if (group->lengths) {
+    free(group->lengths);
+    group->lengths = NULL;
   }
 
   fec_group_clear(group);
@@ -69,7 +69,7 @@ void fec_group_destroy(fec_group_t *group) {
 **/
 void fec_group_clear(fec_group_t *group) {
   group->buf = NULL;
-  group->pkts = NULL;
+  group->lengths = NULL;
 
   group->fec_k = group->fec_n = group->tstamp = 0;
   group->fec_len = 0;
@@ -91,7 +91,7 @@ void fec_group_print(fec_group_t *group) {
 
   int i;
   for (i = 0; i < group->fec_n; i++) {
-    if (group->pkts[i] == 0) {
+    if (group->lengths[i] == 0) {
       fprintf(stderr, "%d: not received\n", i);
     } else {
       fprintf(stderr, "%d: received\n", i);
@@ -113,13 +113,13 @@ void fec_group_insert_pkt(fec_group_t *group,
   assert(pkt->hdr.group_tstamp == group->tstamp);
 
   /* check if packet already received */
-  if (group->pkts[pkt->hdr.packet_seq] == 0) {
+  if (group->lengths[pkt->hdr.packet_seq] == 0) {
     unsigned char *ptr = group->buf + pkt->hdr.packet_seq * group->fec_len;
     memcpy(ptr, pkt->payload, pkt->hdr.len);
     if (pkt->hdr.len < group->fec_len) {
       memset(ptr + pkt->hdr.len, 0, group->fec_len - pkt->hdr.len);
     }
-    group->pkts[pkt->hdr.packet_seq] = 1;
+    group->lengths[pkt->hdr.packet_seq] = pkt->hdr.len;
     group->rcvd_pkts++;
   }
 }
@@ -146,7 +146,7 @@ int fec_group_decode(fec_group_t *group) {
     /* create index array and pointer array. */
     int i, j;
     for (i = 0, j = 0; i < group->fec_n; i++) {
-      if (group->pkts[i] == 1) {
+      if (group->lengths[i] > 0) {
         idxs[j] = i;
         j++;
         if (j == group->fec_k)
@@ -208,7 +208,7 @@ int fec_group_decode_to_adus(fec_group_t *group,
     **/
     int i;
     for (i = 0; i < group->fec_k; i++) {
-      if (group->pkts[i] == 1) {
+      if (group->lengths[i] > 0) {
         adu_t adu;
         memcpy(adu.raw,
                group->buf + i * group->fec_len,

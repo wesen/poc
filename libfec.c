@@ -13,23 +13,95 @@
 
 #include "libfec.h"
 
-static aq_t fec_aq;
+#define min(a,b) ((a) > (b) ? (b) : (a))
+
 static int initialized = 0;
 
-void libfec_init(void) {
-  aq_init(&fec_aq);
+static file_t infile;
+static int infile_open = 0;
+static aq_t qin;
+
+static file_t outfile;
+static int outfile_open = 0;
+static aq_t qout;
+
+void libfec_init(char *infilename, char *outfilename) {
+  if (infilename) {
+    aq_init(&qin);
+    if (!file_open_read(&infile, infilename))
+      assert(NULL);
+    infile_open = 1;
+  }
+
+  if (outfilename) {
+    aq_init(&qout);
+    if (!file_open_write(&outfile, outfilename))
+      assert(NULL);
+    outfile_open = 1;
+  }
+  
   initialized = 1;
 }
 
 void libfec_close(void) {
-  aq_destroy(&fec_aq);
+  if (infile_open) {
+    aq_destroy(&qin);
+    file_close(&infile);
+    infile_open = 0;
+  }
+  if (outfile_open) {
+    aq_destroy(&qout);
+    file_close(&outfile);
+    outfile_open = 0;
+  }
+  
   initialized = 0;
 }
 
-void libfec_reset(void) {
+unsigned int libfec_read_adu(unsigned char *dst, unsigned int len) {
+  assert(dst != NULL);
   assert(initialized);
-  libfec_close();
-  libfec_init();
+  assert(infile_open);
+
+  mp3_frame_t frame;
+  while (mp3_next_frame(&infile, &frame) > 0) {
+    if (aq_add_frame(&qin, &frame)) {
+      adu_t *adu = aq_get_adu(&qin);
+      assert(adu != NULL);
+
+      unsigned int retlen = min(len, adu->adu_size);
+      memcpy(dst, adu->raw, retlen);
+
+      free(adu);
+
+      return retlen;
+    }
+  }
+
+  return 0;
+}
+
+void libfec_write_adu(unsigned char *buf, unsigned int len) {
+  assert(buf != NULL);
+  assert(initialized);
+  assert(outfile_open);
+  
+  adu_t adu;
+  memcpy(adu.raw, buf, len);
+  int ret = mp3_unpack(&adu);
+  assert(ret);
+
+  if (aq_add_adu(&qout, &adu)) {
+    mp3_frame_t *frame = aq_get_frame(&qout);
+    assert(frame != NULL);
+
+    if (!mp3_fill_hdr(frame) ||
+        !mp3_fill_si(frame) ||
+        !mp3_write_frame(&outfile, frame))
+      assert(NULL);
+
+    free(frame);
+  }
 }
 
 fec_decode_t *libfec_new_group(unsigned char fec_k,
@@ -70,23 +142,26 @@ unsigned int libfec_decode(fec_decode_t *group,
                            unsigned int idx,
                            unsigned int len) {
   assert(initialized);
-  if (!fec_group_decode(group, &fec_aq))
-    return 0;
+  assert(group != NULL);
+  assert(dst != NULL);
+  assert(idx < group->fec_k);
 
-  mp3_frame_t *frame;
-  while ((frame = aq_get_frame(&fec_aq)) != NULL) {
-    memset(frame->raw, 0, 4 + frame->si_size);
-    if (!mp3_fill_hdr(frame) ||
-        !mp3_fill_si(frame)  ||
-        (write(STDOUT_FILENO,
-               frame->raw,
-               frame->frame_size) < (int)frame->frame_size)) {
-      free(frame);
+  if (!group->decoded)
+    fec_group_decode(group);
+
+  if (group->decoded) {
+    unsigned int retlen = min(len, group->fec_len);
+    memcpy(dst, group->buf + idx * group->fec_len, retlen);
+    return retlen;
+  } else {
+    if (group->lengths[idx] > 0) {
+      unsigned int retlen = min(len, group->lengths[idx]);
+      memcpy(dst, group->buf + idx * group->fec_len, retlen);
+      return retlen;
+    } else {
       return 0;
     }
   }
-
-  return 1;
 }
 
 void libfec_delete_group(fec_decode_t *group) {

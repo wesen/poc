@@ -7,9 +7,23 @@ typedef struct fec_group_s fec_decode_t;
 struct fec_encode_s;
 typedef struct fec_encode_s fec_encode_t;
 
-void libfec_init(void);
+/*
+ * Initialize the library. Must be called before using any other call
+ * of the library.
+ *
+ * If infile is not NULL, the given file is opened ("-" for
+ * stdin). Further calls to libfec_read_adu() will return the next
+ * adu in the file.
+ *
+ * If outfile is not NULL, the given file is opened ("-" for
+ * stdout). Further calls to libfec_write_adu() will write the given
+ * ADU to the file (after conversion to MP3 frames).
+ */
+void libfec_init(char *infile, char *outfile);
 void libfec_close(void);
-void libfec_reset(void);
+
+unsigned int libfec_read_adu(unsigned char *dst, unsigned int len);
+void libfec_write_adu(unsigned char *buf, unsigned int len);
 
 /* fec_len is the maximum packet size in the group */
 fec_decode_t *libfec_new_group(unsigned char fec_k,
@@ -32,12 +46,16 @@ void libfec_add_pkt(fec_decode_t *group,
                     unsigned long len,
                     unsigned char *data);
 /*
- * Decode the FEC packets in the group, and write the resulting MP3
- * frames on stdout.
+ * Decode the FEC group and extract the packet with seq idx. Note
+ * that the original length information can not be recovered from the
+ * encoded data. The resulting data can be padded with 0s.
  *
  * Return 1 on success, 0 on error
  */
-int libfec_decode(fec_decode_t *group);
+unsigned int libfec_decode(fec_decode_t *group,
+                           unsigned char *dst,
+                           unsigned int idx,
+                           unsigned int len);
 
 /****** Encoding routines ******/
 
