@@ -30,17 +30,17 @@ void libfec_reset(void) {
   libfec_init();
 }
 
-fec_group_t *libfec_new_group(unsigned char fec_k,
+fec_decode_t *libfec_new_group(unsigned char fec_k,
                               unsigned char fec_n,
                               unsigned long fec_len) {
-  fec_group_t *group = malloc(sizeof(fec_group_t));
+  fec_decode_t *group = malloc(sizeof(fec_decode_t));
   if (group == NULL)
     return NULL;
   fec_group_init(group, fec_k, fec_n, 0, 0, fec_len);
   return group;
 }
 
-void libfec_add_pkt(fec_group_t *group,
+void libfec_add_pkt(fec_decode_t *group,
                  unsigned char pkt_seq,
                  unsigned long len,
                  unsigned char *data) {
@@ -61,7 +61,7 @@ void libfec_add_pkt(fec_group_t *group,
   fec_group_insert_pkt(group, &pkt);
 }
 
-int libfec_decode(fec_group_t *group) {
+int libfec_decode(fec_decode_t *group) {
   assert(initialized);
   if (!fec_group_decode(group, &fec_aq))
     return 0;
@@ -82,7 +82,7 @@ int libfec_decode(fec_group_t *group) {
   return 1;
 }
 
-void libfec_delete_group(fec_group_t *group) {
+void libfec_delete_group(fec_decode_t *group) {
   assert(group != NULL);
   fec_group_destroy(group);
   free(group);
