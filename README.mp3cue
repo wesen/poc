@@ -35,15 +35,3 @@ Example:
 
 mp3cue -c dj-mix.cue dj-mix.mp3
 
-This will produce the following mp3 files:
-
-01. dj bl0rg - goa mix.mp3
-02. dj m0rf - trance mix.mp3
-03. dj neingeist - dnb mix.mp3
-...
-
-TODO
-====
-
-- Write a real grammar for CUE files.
-- Set id3 tags of output mp3 files.

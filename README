@@ -18,6 +18,14 @@ INSTALLATION
 All the tools in the poc package can be compiled using GNU make.
 The tools have been tested under MacOSX, Cygwin and Linux.
 
+Edit conf.h, edit Makefile, then use:
+
+     make         - produce all binaries
+     make servers - produce server binaries
+     make clients - produce client binaries
+     make mp3cue  - produce mp3cue binary
+     make mp3cut  - produce mp3cut binary
+
 STREAMING
 =========
 
@@ -68,10 +76,18 @@ simple. To split the big foobar.mp3 file according to foobar.cue:
 
      ./mp3cue -c foobar.cue foobar.mp3
 
+This will produce the following mp3 files:
+
+01. dj bl0rg - goa mix.mp3
+02. dj m0rf - trance mix.mp3
+03. dj neingeist - dnb mix.mp3
+...
+
 mp3cue will split foobar.mp3 in multiple mp3 files according to the
 cue file, and set their id3 tags to the information contained in the
 cue file. mp3cue splits on ADU boundary in order to avoid audio
 glitches and cracks.
+
 
 mp3cut is a command-line tool to split and concatenate mp3 files. The
 splitting is done using ADUs to avoid audio glitches and tracks. To
