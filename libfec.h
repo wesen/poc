@@ -1,6 +1,9 @@
 #ifndef LIBFEC_H__
 #define LIBFEC_H__
 
+struct fec_group_s;
+typedef struct fec_group_s fec_group_t;
+
 void libfec_init(void);
 void libfec_close(void);
 void libfec_reset(void);

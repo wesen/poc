@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <assert.h>
 
+#include "libfec.h"
 #include "fec-group.h"
 #include "fec-pkt.h"
 
