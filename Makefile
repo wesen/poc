@@ -350,8 +350,8 @@ clean: tests-clean \
        mp3length-clean \
        dep-clean
 
-USER  ?= $(GROUP)
-#GROUP ?= $(GROUP)
+USER  ?= root
+GROUP ?= root
 PREFIX:= /usr/local
 install: install-man
 	mkdir -p $(DESTDIR)/$(PREFIX)/bin
