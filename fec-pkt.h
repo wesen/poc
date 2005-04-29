@@ -62,6 +62,6 @@ void fec_pkt_init(/*@out@*/ fec_pkt_t *pkt);
 
 ssize_t fec_pkt_send(fec_pkt_t *pkt, int fd);
 ssize_t fec_pkt_sendto(fec_pkt_t *pkt, int fd, struct sockaddr *to, socklen_t tolen);
-ssize_t fec_pkt_read(fec_pkt_t *pkt, int fd);
+int fec_pkt_read(fec_pkt_t *pkt, int fd);
 
 #endif /* FEC_PKT_H__ */
