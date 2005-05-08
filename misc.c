@@ -58,5 +58,15 @@ int unix_read(int fd, unsigned char *buf, size_t size) {
     return len;
 }
 
+void format_time(unsigned long time, char *str, unsigned int len) {
+    unsigned long ms = time % 1000;
+    time /= 1000;
+    unsigned long secs = time % 60;
+    time /= 60;
+    unsigned long minutes = time % 60;
+    time /= 60;
+    unsigned long hours = time;
 
-  
+    snprintf(str, len, "%.2lu:%.2lu:%.2lu+%.3lu", hours, minutes, secs, ms);
+}
+

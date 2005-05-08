@@ -9,21 +9,10 @@
 #include "file.h"
 #include "mp3.h"
 #include "aq.h"
+#include "misc.h"
 
 static void usage(void) {
   fprintf(stderr, "Usage: mp3length mp3file\n");
-}
-
-static void format_time(unsigned long time, char *str, unsigned int len) {
-  unsigned long ms = time % 1000;
-  time /= 1000;
-  unsigned long secs = time % 60;
-  time /= 60;
-  unsigned long minutes = time;
-  time /= 60;
-  unsigned long hours = time;
-
-  snprintf(str, len, "%.2lu:%.2lu:%.2lu+%.3lu", hours, minutes, secs, ms);
 }
 
 int main(int argc, char *argv[]) {

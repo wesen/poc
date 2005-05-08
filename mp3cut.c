@@ -10,6 +10,7 @@
 #include "file.h"
 #include "mp3.h"
 #include "id3.h"
+#include "misc.h"
 
 #define min(a, b) ((a) < (b) ? (a) : (b))
 
@@ -97,18 +98,6 @@ static int parse_time(const char *str, unsigned long *time) {
   *time = (((hours * 60) + minutes) * 60 + seconds) * 1000 + ms;
 
   return 0;
-}
-
-static void format_time(unsigned long time, char *str, unsigned int len) {
-  unsigned long ms = time % 1000;
-  time /= 1000;
-  unsigned long secs = time % 60;
-  time /= 60;
-  unsigned long minutes = time;
-  time /= 60;
-  unsigned long hours = time;
-
-  snprintf(str, len, "%.2lu:%.2lu:%.2lu+%.3lu", hours, minutes, secs, ms);
 }
 
 typedef struct mp3cut_s {

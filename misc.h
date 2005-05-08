@@ -11,5 +11,6 @@
 
 int unix_write(int fd, unsigned char *buf, size_t size);
 int unix_read(int fd, unsigned char *buf, size_t size);
+void format_time(unsigned long time, char *str, unsigned int len);
 
 #endif /* MISC_H__ */

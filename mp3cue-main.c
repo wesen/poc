@@ -19,6 +19,7 @@
 #include "mp3cue.h"
 #include "mp3.h"
 #include "id3.h"
+#include "misc.h"
 
 /*M
   MP3 Cue structure that will get filled by the parser.
@@ -30,18 +31,6 @@ int yyparse();
 static void usage(void) {
   printf("Usage: mp3cue -c cuefile mp3file\n");
   printf("-c cuefile: cut according to cue file\n");
-}
-
-static void format_time(unsigned long time, char *str, unsigned int len) {
-  unsigned long ms = time % 1000;
-  time /= 1000;
-  unsigned long secs = time % 60;
-  time /= 60;
-  unsigned long minutes = time;
-  time /= 60;
-  unsigned long hours = time;
-
-  snprintf(str, len, "%.2lu:%.2lu:%.2lu+%.3lu", hours, minutes, secs, ms);
 }
 
 int mp3cue_write_id3(file_t *outfile, mp3cue_file_t *cuefile,
