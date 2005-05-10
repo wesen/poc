@@ -779,6 +779,9 @@ int mp3_next_frame(file_t *mp3, mp3_frame_t *frame) {
     goto resync;
   }
 
+  if (frame->frame_size - 4 > MP3_RAW_SIZE) 
+    goto resync;
+
   if (file_read(mp3, frame->raw + 4, frame->frame_size - 4) <= 0)
     return EEOF;
 
