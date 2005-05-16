@@ -95,7 +95,7 @@ int file_open_write(file_t *file, char *filename) {
     file->fd = STDOUT_FILENO;
   else {
     file->fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC,
-                    S_IRWXU | S_IRGRP | S_IROTH);
+                    S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 
     if (file->fd < 0) {
       perror("open");
