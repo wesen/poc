@@ -388,7 +388,7 @@ int main(int argc, char *argv[]) {
   int i;
   for (i = optind; (i < argc) && !finished; i++) {
     assert(argv[i] != NULL);
-    unsigned char filename[MAX_FILENAME];
+    char filename[MAX_FILENAME];
     strncpy(filename, argv[i], MAX_FILENAME - 1);
     filename[MAX_FILENAME - 1] = '\0';
 

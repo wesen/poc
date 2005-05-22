@@ -28,9 +28,9 @@ static unsigned long id3_sync_safe(unsigned long num) {
 
 unsigned int id3_fill_comment(unsigned char *buf, unsigned int len,
                               unsigned char encoding,
-                              unsigned char *short_comment,
-                              unsigned char *long_comment,
-                              unsigned char *language) {
+                              char *short_comment,
+                              char *long_comment,
+                              char *language) {
   assert(buf != NULL);
   assert(len > 0);
   if ((short_comment == NULL) &&
@@ -65,9 +65,9 @@ unsigned int id3_fill_comment(unsigned char *buf, unsigned int len,
 }
 
 unsigned int id3_fill_tframe(unsigned char *buf, unsigned int len,
-                             unsigned char *type,
+                             char *type,
                              unsigned char encoding,
-                             unsigned char *string) {
+                             char *string) {
   assert(buf != NULL);
   assert(len > 0);
   assert(type != NULL);
@@ -103,11 +103,11 @@ int id3_fill_header(unsigned char *buf, unsigned int len,
 }
 
 int id3_write_tag(file_t *outfile,
-                  unsigned char *album_title,
-                  unsigned char *artist,
-                  unsigned char *title,
+                  char *album_title,
+                  char *artist,
+                  char *title,
                   unsigned int track_number,
-                  unsigned char *comment) {
+                  char *comment) {
   /* write id3 tags */
   unsigned char id3[ID3_TAG_SIZE];
   unsigned char *ptr = id3 + ID3_HEADER_SIZE;
@@ -136,7 +136,7 @@ int id3_write_tag(file_t *outfile,
   }
 
   if (track_number > 0) {
-    unsigned char tracknumber[256];
+    char tracknumber[256];
     snprintf(tracknumber, 256, "%d", track_number);
     len = id3_fill_tframe(ptr, bytes_left, "TRK", 0, tracknumber);
     if (len == 0)

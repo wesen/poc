@@ -278,7 +278,7 @@ int net_tcp4_accept_socket(int s,
                            unsigned char ip[4],
                            unsigned short *port) {
   struct sockaddr_in sa;
-  int len = sizeof(sa);
+  socklen_t len = sizeof(sa);
   int fd;
 
   fd = accept(s, (struct sockaddr *)&sa, &len);

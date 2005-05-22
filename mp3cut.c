@@ -159,7 +159,7 @@ static unsigned int parse_arguments(mp3cut_t *mp3cuts, unsigned int max_cuts,
       i++;
     } else if (!strcmp(argv[i], "-t")) {
       if (argc > (i+1)) {
-        unsigned char *fromstr, *tostr;
+        char *fromstr, *tostr;
         fromstr = strtok(argv[i+1], "-");
         tostr = strtok(NULL, "-");
         if (!fromstr && !tostr)

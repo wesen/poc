@@ -16,21 +16,21 @@
 
 unsigned int id3_fill_comment(unsigned char *buf, unsigned int len,
                               unsigned char encoding,
-                              unsigned char *short_comment,
-                              unsigned char *long_comment,
-                              unsigned char *language);
+                              char *short_comment,
+                              char *long_comment,
+                              char *language);
 unsigned int id3_fill_tframe(unsigned char *buf, unsigned int len,
-                             unsigned char *type,
+                             char *type,
                              unsigned char encoding,
-                             unsigned char *string);
+                             char *string);
 int id3_fill_header(unsigned char *buf, unsigned int len,
                     unsigned long id3_size);
 
 int id3_write_tag(file_t *outfile,
-                  unsigned char *album_title,
-                  unsigned char *artist,
-                  unsigned char *title,
+                  char *album_title,
+                  char *artist,
+                  char *title,
                   unsigned int track_number,
-                  unsigned char *comment);
+                  char *comment);
 
 #endif /* ID3_H__ */
