@@ -7,7 +7,7 @@
 #include <signal.h>
 #include <stdio.h>
 
-#include "signal.h"
+#include "sig_set_handler.h"
 
 /*M
   \emph{Set a new handler for a signal.}

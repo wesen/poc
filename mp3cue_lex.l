@@ -3,7 +3,7 @@
 %{
 #include <string.h>
 #include "mp3cue.h"
-#include "mp3cue-y.tab.h"
+#include "mp3cue_yacc.h"
 
 extern int lc;
 %}

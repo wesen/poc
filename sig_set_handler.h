@@ -5,7 +5,7 @@
 #ifndef SIGNAL_H__
 #define SIGNAL_H__
 
-#include <signal.h>
+#include <sig_set_handler.h>
 
 /*M
   \emph{Function type for signal handlers.}

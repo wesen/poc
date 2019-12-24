@@ -26,7 +26,7 @@
 #include "aq.h"
 #include "network.h"
 #include "rtp.h"
-#include "signal.h"
+#include "sig_set_handler.h"
 #include "file.h"
 
 #ifdef WITH_IPV6
@@ -234,7 +234,7 @@ int poc_mainloop(int sock, char *filename, int quiet) {
       (tv.tv_sec - start_sec) * 1000000 + (tv.tv_usec - start_usec);
     
     wait_time -= len;
-    if (abs(wait_time) > MAX_WAIT_TIME)
+    if (abs((int)wait_time) > MAX_WAIT_TIME)
       wait_time = 0;
 
     start_sec = tv.tv_sec;

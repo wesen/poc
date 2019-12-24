@@ -25,7 +25,7 @@
 #include "mp3.h"
 #include "network.h"
 #include "rtp.h"
-#include "signal.h"
+#include "sig_set_handler.h"
 #include "file.h"
 
 #ifdef WITH_IPV6
