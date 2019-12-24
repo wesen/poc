@@ -257,7 +257,7 @@ int main(int argc, char *argv[]) {
   /* cycle through the mp3cuts */
   int i;
   for (i = 0; i < mp3cuts_cnt; i++) {
-    file_t mp3file;
+    file_t mp3file = {0};
     if (!file_open_read(&mp3file, mp3cuts[i].filename)) {
       fprintf(stderr, "Could not open mp3 file: %s\n", mp3cuts[i].filename);
       retval = EXIT_FAILURE;

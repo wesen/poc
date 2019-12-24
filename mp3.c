@@ -6,6 +6,7 @@
 
 #include <assert.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "mp3.h"
 
@@ -15,14 +16,26 @@
   Free format MP3s are considered invalid (for now).
 **/
 unsigned long bitratetable[16] = {
-  -1, 32, 40, 48, 56, 64, 80, 96,112,128,160,192,224,256,320, -1
+    -1, 32, 40, 48,
+    56, 64, 80, 96,
+    112, 128, 160, 192,
+    224, 256, 320, -1,
+};
+unsigned long lsf_bitratetable[16] = {
+    -1, 8, 16, 24,
+    32, 40, 48, 56,
+    64, 80, 96, 112,
+    128, 144, 160, -1
 };
 
 /*M
   \emph{Samplerate table for MPEG Audio Layer III version 1.0.}
 **/
-unsigned short sampleratetable[4] = {
-  44100,  48000, 32000,  -1
+unsigned short sampleratetable[4][4] = {
+    {11025, 12000, 8000,  0},
+    {0},
+    {22050, 24000, 16000, 0},
+    {44100, 48000, 32000, 0},
 };
 
 /*M
@@ -35,14 +48,29 @@ unsigned short sampleratetable[4] = {
 void mp3_calc_hdr(mp3_frame_t *frame) {
   assert(frame != NULL);
 
-  frame->bitrate    = bitratetable[frame->bitrate_index];
-  frame->samplerate = sampleratetable[frame->samplerfindex];
-  frame->samplelen  = 1152; /* only layer III */
-  frame->si_size    = frame->mode != (unsigned char)3 ? 32 : 17;
+  const int is_lsf = frame->id != MPEG_VERSION_1; // MPEG 2 and 2.5 are Lower Sampling Frequency extension
+
+  if (is_lsf) {
+    frame->bitrate = lsf_bitratetable[frame->bitrate_index];
+  } else {
+    frame->bitrate = bitratetable[frame->bitrate_index];
+
+  }
+  frame->samplerate = sampleratetable[frame->id][frame->samplerfindex];
+  frame->samplelen = 1152; /* only layer III */
+  if (is_lsf) {
+    frame->si_size = frame->mode != (unsigned char) 3 ? 17 : 9;
+  } else {
+    frame->si_size = frame->mode != (unsigned char) 3 ? 32 : 17;
+  }
   frame->si_bitsize = frame->si_size * 8;
 
   /* calculate frame length */
-  frame->frame_size = 144000 * frame->bitrate;
+  if (is_lsf) {
+    frame->frame_size = 72000 * frame->bitrate;
+  } else {
+    frame->frame_size = 144000 * frame->bitrate;
+  }
   frame->frame_size /= frame->samplerate;
   frame->frame_size += frame->padding_bit;
 
@@ -50,7 +78,7 @@ void mp3_calc_hdr(mp3_frame_t *frame) {
   if (frame->protected == 0)
     frame->frame_data_size -= 2;
 
-  frame->usec = (double)frame->frame_size * 8 * 1000.0 / ((double)frame->bitrate);
+  frame->usec = (double) frame->frame_size * 8 * 1000.0 / ((double) frame->bitrate);
 }
 
 unsigned long mp3_frame_size(mp3_frame_t *frame) {

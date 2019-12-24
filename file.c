@@ -25,7 +25,11 @@ int file_read(file_t *file, unsigned char *buf, size_t size) {
   assert(buf != NULL);
   assert(size > 0);
 
-  return unix_read(file->fd, buf, size);
+  int res = unix_read(file->fd, buf, size);
+  if (res > 0) {
+    file->pos += res;
+  }
+  return res;
 }
 
 /*M
@@ -34,8 +38,10 @@ int file_read(file_t *file, unsigned char *buf, size_t size) {
 int file_seek_fwd(file_t *file, size_t size) {
   if (lseek(file->fd, size, SEEK_CUR) < 0)
     return 0;
-  else
+  else {
+    file->pos += size;
     return 1;
+  }
 }
 
 /*M

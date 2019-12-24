@@ -31,6 +31,8 @@ int mp3_read_si(mp3_frame_t *frame) {
   bv_t bv;
   bv_init(&bv, ptr, frame->si_bitsize);
 
+  const int is_lsf = frame->id != MPEG_VERSION_1; // MPEG 2 and 2.5 are Lower Sampling Frequency extension
+
   /* reset granule content length */
   frame->si.channel[0].granule[0].part2_3_length = 0;
   frame->si.channel[0].granule[1].part2_3_length = 0;
@@ -45,27 +47,28 @@ int mp3_read_si(mp3_frame_t *frame) {
 
   /*M
     \emph{End of main data.}
-    
+
    (ISO) The value of main data end is used to determine the
    location in the bitstream of the last bit of main data for the
    frame. The main data end value specifies the location as a negative
    offset in bytes from the next frame's frame header location in the
    main data portion of the bitstream
   **/
-  si->main_data_end = bv_get_bits(&bv, 9);
+  si->main_data_end = bv_get_bits(&bv, is_lsf ? 8 : 9);
 
   /*M
     \emph{Private bits,}
-    
+
    (ISO) Bits for private use. These bits will not be used in the
    future by ISO
   **/
-  si->private_bits  = nch == 2 ? bv_get_bits(&bv, 3)
-                               : bv_get_bits(&bv, 5);
+  const int private_bitlen = is_lsf ? ((nch == 1) ? 1 : 2) :
+                             ((nch == 1) ? 5 : 3);
+  si->private_bits = bv_get_bits(&bv, private_bitlen);
 
   /*M
     \emph{Scalefactor selection information.}
-    
+
    (ISO) In Layer III the scalefactor selection information works
    similarly to Layers I and II. The main difference is the use of the
    variable scfsi band to apply scfsi to groups of scalefactors
@@ -79,22 +82,27 @@ int mp3_read_si(mp3_frame_t *frame) {
    If short windows are switched on, i.e. block type == 2 for one
    of the granules, then scfsi is always 0 for this frame.
   **/
-  
-  unsigned int i;
-  for (i = 0; i < nch; i++) {
-    unsigned int band;
-    for (band = 0; band < 4; band++)
-      si->channel[i].scfsi[band] = bv_get_bits(&bv, 1);
+
+  int ngr = 1;
+
+  if (!is_lsf) {
+    unsigned int i;
+    for (i = 0; i < nch; i++) {
+      unsigned int band;
+      for (band = 0; band < 4; band++)
+        si->channel[i].scfsi[band] = bv_get_bits(&bv, 1);
+    }
   }
-  
+
   unsigned int gri;
-  for (gri = 0; gri < 2; gri++) {
+  int i = 0;
+  for (gri = 0; gri < ngr; gri++) {
     for (i = 0; i < nch; i++) {
       mp3_granule_t *gr = &si->channel[i].granule[gri];
 
       /*M
         \emph{Length of main data.}
-        
+
        (ISO) This value contains the number of main data bits used
        for scalefactors and Huffman code data. Because the length
        of the side inforamtion is always the same, this value can
@@ -108,7 +116,7 @@ int mp3_read_si(mp3_frame_t *frame) {
 
       /*M
         \emph{Length of ``big'' Huffman data.}
-        
+
        (ISO) The spectral values of each granule are coded with
        different Huffman code tables. The full frequency ranges
        from zero to the Nyquist frequency is divided into several
@@ -139,23 +147,23 @@ xxxxxxxxxxxxx------------------0000000000000000000000000000
        The values xxx are not bound.
        Iblen is 576.
       **/
-      gr->big_values   = bv_get_bits(&bv, 9);
+      gr->big_values = bv_get_bits(&bv, 9);
       assert((gr->big_values <= 288) || "big_values are too large");
 
       /*M
         \emph{Global gain.}
-        
+
        (ISO) The quantizer step size information is transmitted in
        the side information variable global gain. It is
        logarithmically quantized. For the application of
        global gain, refer to the formula in 2.4.3.4 "Formula for
        requantization and all scaling".
       **/
-      gr->global_gain  = bv_get_bits(&bv, 8);
+      gr->global_gain = bv_get_bits(&bv, 8);
 
       /*M
         \emph{Scalefactor compression.}
-        
+
        (ISO) Selects the number of bits used for the transmission
        of the scalefactors according to the following table:
        if block type is 0, 1, or 3:
@@ -210,11 +218,11 @@ xxxxxxxxxxxxx------------------0000000000000000000000000000
        \hline
        \end{tabular}
        **/
-      gr->scale_comp   = bv_get_bits(&bv, 4);
+      gr->scale_comp = bv_get_bits(&bv, is_lsf ? 9 : 4);
 
       /*M
         \emph{Block windowing split flag.}
-        
+
        (ISO) Signals that the block uses an other than normal (type
        0) window. If blocksplit flag is set, several other
        variables are set by default:
@@ -234,7 +242,7 @@ xxxxxxxxxxxxx------------------0000000000000000000000000000
       if (gr->blocksplit_flag != 0) {
         /*M
           \emph{Windowing type.}
-          
+
           (ISO) Indicates the window type for the actual granule
           (see description of the filterbank, Layer III).
           \begin{itemize}
@@ -243,7 +251,7 @@ xxxxxxxxxxxxx------------------0000000000000000000000000000
           \item type 2 - 3 short windows
           \item type 3 - end block
           \end{itemize}
-          
+
          Block type and switch point give the information about
          assembling of values in the block and about length and
          count of the transforms. In the case of block type == 2,
@@ -277,7 +285,7 @@ xxxxxxxxxxxxx------------------0000000000000000000000000000
 
         /*M
           \emph{Switch point.}
-          
+
          (ISO) Signals the split point of short/long
          transforms. The following table shows the number of the
          scalefactor band above which window switching
@@ -311,19 +319,19 @@ xxxxxxxxxxxxx------------------0000000000000000000000000000
 
         /*M
           \emph{Huffman code table selection.}
-          
+
          (ISO) Different Huffman code tables are used depending on the
          maximum quantized value and the local statistics of the
          signal. There are a total of 32 possible tables given in
          3-Annex B Table 3-B.7.
         **/
-        gr->tbl_sel[0]   = bv_get_bits(&bv, 5);
-        gr->tbl_sel[1]   = bv_get_bits(&bv, 5);
-        gr->tbl_sel[2]   = 0;
+        gr->tbl_sel[0] = bv_get_bits(&bv, 5);
+        gr->tbl_sel[1] = bv_get_bits(&bv, 5);
+        gr->tbl_sel[2] = 0;
 
         /*M
           \emph{Subblock gain offset.}
-          
+
          (ISO) Indicates the gain offset (quantization: factor 4) from
          the global gain for one subblock. Used only with block type 2
          (short windows). The values of the subblock have to be
@@ -340,7 +348,7 @@ xxxxxxxxxxxxx------------------0000000000000000000000000000
         else
           gr->reg0_cnt = 8;
         gr->reg1_cnt = 0;
-          
+
       } else {
         unsigned int j;
         for (j = 0; j < 3; j++)
@@ -348,7 +356,7 @@ xxxxxxxxxxxxx------------------0000000000000000000000000000
 
         /*M
           \emph{First region subdivision information.}
-          
+
          (ISO) A further partitioning of the spectrum is used to
          enhance the performance of the Huffman coder. It is a
          subdivision of the region which is described by
@@ -373,9 +381,9 @@ xxxxxxxxxxxxx------------------0000000000000000000000000000
 
          \begin{tabular}{|l|l|}
          \hline
-         region address1   &     upper edge of region is upper edge 
+         region address1   &     upper edge of region is upper edge
                                  of scalefactor band number \\
-         \hline                                  
+         \hline
          0     &                  0 (no first region)  \\
          1     &                  1 \\
          2     &                  2 \\
@@ -388,7 +396,7 @@ xxxxxxxxxxxxx------------------0000000000000000000000000000
 
         /*M
           \emph{Second region subdivision information.}
-          
+
          (ISO) Region address2 counts the number of scalefactor
          bands which are partially or totally in region 3. Again if
          block type == 2 the scalefactor bands representing
@@ -397,28 +405,33 @@ xxxxxxxxxxxxx------------------0000000000000000000000000000
         gr->reg1_cnt = bv_get_bits(&bv, 3);
 
         /* implicitly set */
-        gr->block_type   = 0;
+        gr->block_type = 0;
         gr->switch_point = 0;
       }
 
-      /*M
-        \emph{Additional high frequency amplification flag.}
-        
-       (ISO) This is a shortcut for additional high frequency
-       amplification of the quantized values. If preflag is set,
-       the values of a table are added to the scalefactors (see
-       3-Annex B, Table 3-B.6). This is equivalent to
-       multiplication of the requantized scalefactors with tables
-       values. preflag is never used if block type == 2 (short blocks).
-      **/
-      gr->preflag     = bv_get_bits(&bv, 1);
+      if (!is_lsf) {
+
+        /*M
+          \emph{Additional high frequency amplification flag.}
+
+         (ISO) This is a shortcut for additional high frequency
+         amplification of the quantized values. If preflag is set,
+         the values of a table are added to the scalefactors (see
+         3-Annex B, Table 3-B.6). This is equivalent to
+         multiplication of the requantized scalefactors with tables
+         values. preflag is never used if block type == 2 (short blocks).
+        **/
+        gr->preflag = bv_get_bits(&bv, 1);
+      } else {
+        gr->preflag = 0;
+      }
 
       /*M
         \emph{Scalefactor scale step size.}
-        
+
        (ISO) The scalefactors are logarithmically quantized with a
        step size of 2 (or sqrt(2)) depending on scalefac scale
-       
+
        scalefac scale = 0      stepsize sqrt(2)
        scalefac scale = 1      stepsize 2
       **/
@@ -442,14 +455,14 @@ xxxxxxxxxxxxx------------------0000000000000000000000000000
         Table to get scalefactor length information from scale comp.
       */
       static const int slen_table[2][16] = {
-        { 0, 0, 0, 0,
-          3, 1, 1, 1,
-          2, 2, 2, 3,
-          3, 3, 4, 4 },
-        { 0, 1, 2, 3,
-          0, 1, 2, 3,
-          1, 2, 3, 1,
-          2, 3, 2, 3 }
+          {0, 0, 0, 0,
+              3, 1, 1, 1,
+              2, 2, 2, 3,
+              3, 3, 4, 4},
+          {0, 1, 2, 3,
+              0, 1, 2, 3,
+              1, 2, 3, 1,
+              2, 3, 2, 3}
       };
 
       /*M
@@ -480,7 +493,9 @@ xxxxxxxxxxxxx------------------0000000000000000000000000000
   }
 
   frame->adu_size = (frame->adu_bitsize + 7) / 8;
-  
+
+  assert((bv.len == bv.idx) || "Side information not read completely");
+
   return 1;
 }
 
@@ -489,32 +504,39 @@ xxxxxxxxxxxxx------------------0000000000000000000000000000
 **/
 int mp3_read_hdr(mp3_frame_t *frame) {
   assert(frame != NULL);
-  
+
   bv_t bv;
   bv_init(&bv, frame->raw, 4 * 8);
-  
+
   /*M
     \emph{Header identifaction string.}
-    
+
    (ISO) The bit string ``\verb|1111 1111 1111|''
   **/
-  if (bv_get_bits(&bv, 12) != 0xFFF)
+  if (bv_get_bits(&bv, 11) != 0x7FF)
     return 0;
 
   /*M
-    \emph{Algorithm ID.}
-    
-   (ISO) one bit to indicate the ID of the algorithm. Equals ``1''
-   for MPEG audio, ``0'' is reserved
-  **/
-  frame->id            = bv_get_bits(&bv, 1);
+    \emph{MPEG Audio version ID.}
 
-  if (frame->id == 0)
+   \begin{tabular}{|l|l|}
+   00 & MPEG Version 2.5 (later extension of MPEG 2)
+   01 & reserved
+   10 & MPEG Version 2 (ISO/IEC 13818-3)
+   11 & MPEG Version 1 (ISO/IEC 11172-3)
+   \hline
+   \end{tabular}
+
+   (ISO) two bit to indicate the ID of the algorithm.
+  **/
+  frame->id = bv_get_bits(&bv, 2);
+
+  if (frame->id == MPEG_VERSION_RESERVED)
     return 0;
-  
+
   /*M
     \emph{Layer information.}
-    
+
    (ISO) 2 bits to indicate which layer is used, according to the
    following table
 
@@ -527,7 +549,7 @@ int mp3_read_hdr(mp3_frame_t *frame) {
    \hline
    \end{tabular}
   **/
-  frame->layer         = bv_get_bits(&bv, 2);
+  frame->layer = bv_get_bits(&bv, 2);
 
   /* we can only handle Layer III */
   if (frame->layer != 1)
@@ -541,11 +563,11 @@ int mp3_read_hdr(mp3_frame_t *frame) {
    concealment. Equals 1 if no redundancy has been added, 0 if
    redundancy has been added.
   **/
-  frame->protected        = bv_get_bits(&bv, 1);
+  frame->protected = bv_get_bits(&bv, 1);
 
   /*M
     \emph{Bitrate information.}
-    
+
    (ISO) Indicates the bitrate. The all zero value indicates the
    free format condition, in which a fixed bitrate which does not
    need to be in the list can be used. Fixed means that a frame
@@ -573,14 +595,14 @@ int mp3_read_hdr(mp3_frame_t *frame) {
    0111   &        224 kbps     &  112 kbps   &       96 kbps \\
    1000   &        256 kbps     &  128 kbps   &      112 kbps \\
    1001   &        288 kbps     &  160 kbps   &      128 kbps \\
-   1010   &        320 kbps     &  192 kbps   &      160 kbps \\ 
+   1010   &        320 kbps     &  192 kbps   &      160 kbps \\
    1011   &        352 kbps     &  224 kbps   &      192 kbps \\
    1100   &        384 kbps     &  256 kbps   &      224 kbps \\
    1110   &        416 kbps     &  320 kbps   &      256 kbps \\
    1111   &        448 kbps     &  384 kbps   &      320 kbps \\
    \hline
    \end{tabular}
-   
+
    In order to provide the smallest possible delay and complexity,
    the decoder is not required to support a continuously variable
    bitrate when in Layer I or II. Layer III supports variable
@@ -591,44 +613,46 @@ int mp3_read_hdr(mp3_frame_t *frame) {
 
   /*M
     \emph{Sampling frequency information.}
-    
+
    (ISO) Indicates the sampling frequency, according to the
    following table:
 
-   \begin{tabular}{|l|l|}
+   \begin{tabular}{|l|l|l|l|}
    \hline
-   00 & 44.1 kHz \\
-   01 & 48 kHz \\
-   10 & 32 kHz \\
-   11 & reserved \\
+   Bits & MPEG 1 & MPEG 2 & MPEG 2.5
+   \hline
+   00 & 44.1 kHz & 22.05 kHz & 11.025 kHz \\
+   01 & 48 kHz & 24 kHz & 12 kHz \\
+   10 & 32 kHz & 16 kHz & 8 kHz \\
+   11 & reserved & reserved & reserved \\
    \hline
    \end{tabular}
-   
+
    A reset of the decoder is required to change the sampling rate
   **/
   frame->samplerfindex = bv_get_bits(&bv, 2);
 
   /*M
     \emph{Padding flag.}
-    
+
    (ISO) If this bit equals '1' the frame contains an additional
    slot to adjust the mean bitrate to the sampling frequency,
    otherwise this bit will be '0'. Padding is only necessary with a
    sampling frequency of 44.1 kHz.
   **/
-  frame->padding_bit   = bv_get_bits(&bv, 1);
+  frame->padding_bit = bv_get_bits(&bv, 1);
 
   /*M
     \emph{Private bit.}
-    
+
    (ISO) Bit for private use. This bit will not be used in the
    future by ISO.
   **/
-  frame->private_bit   = bv_get_bits(&bv, 1);
+  frame->private_bit = bv_get_bits(&bv, 1);
 
   /*M
     \emph{Stereo encoding mode.}
-    
+
    (ISO) Indicates the mode according to the following table. In
    Layer I and II the joint stereo mode is intensity stereo, in
    Layer III it is intensity stereo and/or ms stereo
@@ -642,52 +666,52 @@ int mp3_read_hdr(mp3_frame_t *frame) {
    \hline
    \end{tabular}
   **/
-  frame->mode          = bv_get_bits(&bv, 2);
+  frame->mode = bv_get_bits(&bv, 2);
 
   /*M
     \emph{Joint Stereo subband division information.}
-    
+
    (ISO) These bits are used in joint stereo mode. In Layer I and
    II they indicate which subbands are in intensity stereo. All
    other subbands are coded in stereo.
-   
+
    00 - subbands  4-31 in intensity stereo, bound==4
    01 - subbands  8-31 in intensity stereo, bound==8
    10 - subbands 12-31 in intensity stereo, bound==12
    11 - subbands 16-31 in intensity stereo, bound==16
-   
+
    In Layer III they indicate which type of join stereo coding
    method is applied. The frequency ranges over which the
    intensity stereo and ms stereo modes are applied are implicit in
    the algorithm. For more information see 2.4.3.4.
-   
+
                    intensio stereo        ms stereo
    00              off                    off
    01              on                     off
    10              off                    on
    11              on                     on
    **/
-  frame->mode_ext      = bv_get_bits(&bv, 2);
+  frame->mode_ext = bv_get_bits(&bv, 2);
 
   /*M
     \emph{Copyright}
-    
+
    (ISO) If this bit equals 0 there is no copyright on the coded
     bitstream, 1 means copyright protected.
   **/
-  frame->copyright     = bv_get_bits(&bv, 1);
+  frame->copyright = bv_get_bits(&bv, 1);
 
   /*M
     \emph{Original flag.}
-    
+
    (ISO) This bit equals 0 if the bitstream is a copy, 1 if it is
    an original.
   **/
-  frame->original      = bv_get_bits(&bv, 1);
+  frame->original = bv_get_bits(&bv, 1);
 
   /*M
     \emph{MPEG Audio emphasis.}
-    
+
    (ISO) indicates the type of de-emphasis that shall be used.
    \begin{itemize}
    \item 00 - no emphasis
@@ -696,7 +720,7 @@ int mp3_read_hdr(mp3_frame_t *frame) {
    \item 11 - CCITT J.17
    \end{itemize}
   **/
-  frame->emphasis      = bv_get_bits(&bv, 2);
+  frame->emphasis = bv_get_bits(&bv, 2);
 
   if (frame->protected == 0) {
     frame->crc[0] = frame->raw[4];
@@ -704,7 +728,7 @@ int mp3_read_hdr(mp3_frame_t *frame) {
   }
 
   mp3_calc_hdr(frame);
-  
+
   return 1;
 }
 
@@ -719,7 +743,7 @@ int mp3_skip_id3v2(file_t *mp3, mp3_frame_t *frame) {
   memcpy(id3v2_hdr, frame->raw, 4);
   if ((id3v2_hdr[0] != 'I') ||
       (id3v2_hdr[1] != 'D') ||
-      (id3v2_hdr[2] != '3')) 
+      (id3v2_hdr[2] != '3'))
     return 0;
 
   if (file_read(mp3, id3v2_hdr + 4, 6) != 6)
@@ -729,8 +753,8 @@ int mp3_skip_id3v2(file_t *mp3, mp3_frame_t *frame) {
   size_t tag_size = (((id3v2_hdr[6] & 0x7F) << 21) |
                      ((id3v2_hdr[7] & 0x7F) << 14) |
                      ((id3v2_hdr[8] & 0x7F) << 7) |
-                      (id3v2_hdr[9] & 0x7F)) +
-                      (id3v2_hdr[5] & 0x10 ? 10 : 0);
+                     (id3v2_hdr[9] & 0x7F)) +
+                    (id3v2_hdr[5] & 0x10 ? 10 : 0);
 
   if (!file_seek_fwd(mp3, tag_size))
     return 0;
@@ -746,13 +770,13 @@ int mp3_next_frame(file_t *mp3, mp3_frame_t *frame) {
   assert(frame != NULL);
 
   unsigned int resync = 0;
- again:
+  again:
   if (resync != 0) {
     /* read the next byte and build the new header */
     frame->raw[0] = frame->raw[1];
     frame->raw[1] = frame->raw[2];
     frame->raw[2] = frame->raw[3];
-    
+
     if (file_read(mp3, frame->raw + 3, 1) <= 0)
       return EEOF;
   } else {
@@ -761,10 +785,10 @@ int mp3_next_frame(file_t *mp3, mp3_frame_t *frame) {
   }
 
   if ((frame->raw[0] == 0xFF) &&
-      (((frame->raw[1] >> 4) & 0xF) == 0xF)) {
+      (((unsigned char) (frame->raw[1] >> 5) & 0x7u) == 0x7)) {
     if (!mp3_read_hdr(frame))
       goto resync;
-    else 
+    else
       resync = 0;
   } else if ((frame->raw[0] == 'I') &&
              (frame->raw[1] == 'D') &&
@@ -779,7 +803,7 @@ int mp3_next_frame(file_t *mp3, mp3_frame_t *frame) {
     goto resync;
   }
 
-  if (frame->frame_size > MP3_RAW_SIZE) 
+  if (frame->frame_size > MP3_RAW_SIZE)
     goto resync;
 
   if (file_read(mp3, frame->raw + 4, frame->frame_size - 4) <= 0)

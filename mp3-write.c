@@ -25,6 +25,8 @@ int mp3_fill_si(mp3_frame_t *frame) {
   assert((frame->si_bitsize != 0) ||
          "Trying to write an empty sideinfo");
 
+  const int is_lsf = frame->id != MPEG_VERSION_1; // MPEG 2 and 2.5 are Lower Sampling Frequency extension
+
   unsigned char *ptr = frame->raw + 4;
   if (frame->protected == 0)
     ptr += 2;
@@ -35,25 +37,31 @@ int mp3_fill_si(mp3_frame_t *frame) {
   mp3_si_t *si = &frame->si;
   unsigned int nch = (frame->mode != 3) ? 2 : 1;
 
-  bv_put_bits(&bv, si->main_data_end, 9);
-  bv_put_bits(&bv, si->private_bits, nch == 2 ? 3 : 5);
+  bv_put_bits(&bv, si->main_data_end, is_lsf ? 8 : 9);
+  const int private_bitlen = is_lsf ? ((nch == 1) ? 1 : 2) :
+                             ((nch == 1) ? 5 : 3);
+  bv_put_bits(&bv, si->private_bits, private_bitlen);
 
   unsigned int i;
-  for (i = 0; i < nch; i++) {
-    unsigned int band;
-    for (band = 0; band < 4; band++)
-      bv_put_bits(&bv, si->channel[i].scfsi[band], 1);
+  int ngr = 1;
+
+  if (!is_lsf) {
+    for (i = 0; i < nch; i++) {
+      unsigned int band;
+      for (band = 0; band < 4; band++)
+        bv_put_bits(&bv, si->channel[i].scfsi[band], 1);
+    }
   }
 
   unsigned int gri;
-  for (gri = 0; gri < 2; gri++) {
+  for (gri = 0; gri < ngr; gri++) {
     for (i = 0; i < nch; i++) {
       mp3_granule_t *gr = &si->channel[i].granule[gri];
 
       bv_put_bits(&bv, gr->part2_3_length, 12);
       bv_put_bits(&bv, gr->big_values, 9);
       bv_put_bits(&bv, gr->global_gain, 8);
-      bv_put_bits(&bv, gr->scale_comp, 4);
+      bv_put_bits(&bv, gr->scale_comp, is_lsf ? 9 : 4);
       bv_put_bits(&bv, gr->blocksplit_flag, 1);
 
       if (gr->blocksplit_flag) {
@@ -74,7 +82,9 @@ int mp3_fill_si(mp3_frame_t *frame) {
         bv_put_bits(&bv, gr->reg1_cnt, 3);
       }
 
-      bv_put_bits(&bv, gr->preflag, 1);
+      if (!is_lsf) {
+        bv_put_bits(&bv, gr->preflag, 1);
+      }
       bv_put_bits(&bv, gr->scale_scale, 1);
       bv_put_bits(&bv, gr->cnt1tbl_sel, 1);
     }
