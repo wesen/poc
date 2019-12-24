@@ -23,7 +23,7 @@
 #include "fec.h"
 #include "pack.h"
 #include "aq.h"
-#include "signal.h"
+#include "sig_set_handler.h"
 
 #ifdef WITH_IPV6
 static int use_ipv6 = 0;

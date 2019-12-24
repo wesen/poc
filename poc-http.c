@@ -21,7 +21,7 @@
 #include "file.h"
 #include "mp3.h"
 #include "network.h"
-#include "signal.h"
+#include "sig_set_handler.h"
 #include "http.h"
 #include "misc.h"
 
@@ -160,7 +160,7 @@ int poc_mainloop(http_server_t *server, char *filename, int quiet) {
       (tv.tv_sec - start_sec) * 1000000 + (tv.tv_usec - start_usec);
 
     wait_time -= len;
-    if (abs(wait_time) > MAX_WAIT_TIME)
+    if (abs((int)wait_time) > MAX_WAIT_TIME)
       wait_time = 0;
   }
   
