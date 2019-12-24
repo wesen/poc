@@ -27,7 +27,7 @@ CFLAGS += -Wall -O2
 
 TEXIFY := ./texify.pl
 FLEX=flex
-FLEX_LIBS=-lfl
+FLEX_LIBS=
 
 # Use these definitions when using bison
 YACC=bison -b y

@@ -1,3 +1,5 @@
+%option noyywrap
+
 %{
 #include <string.h>
 #include "mp3cue.h"
