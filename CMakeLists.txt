@@ -43,7 +43,7 @@ MACRO(LEX_FILE _filename)
             DEPENDS ${_filename})
 ENDMACRO(LEX_FILE)
 
-add_compile_options(-Wall -O2)
+add_compile_options(-Wall)
 
 set(MP3_SRC
         mp3-read.c
