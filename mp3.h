@@ -21,6 +21,11 @@
 **/
 #define MP3_HDR_SIZE 4
 
+#define MPEG_VERSION_25 0x0
+#define MPEG_VERSION_RESERVED 0x1
+#define MPEG_VERSION_2 0x2
+#define MPEG_VERSION_1 0x3
+
 /*M
   \emph{Scalefactor information contained in a single granule.}
 **/
