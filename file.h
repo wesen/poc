@@ -28,6 +28,7 @@ typedef struct file_s {
   **/
   unsigned long size;
   unsigned short maxsync;
+  unsigned long pos;
 } file_t;
 
 int file_open_read(file_t *file, char *filename);
