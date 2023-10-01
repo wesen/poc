@@ -4,6 +4,7 @@ project(poc C)
 set(CMAKE_C_STANDARD 11)
 
 include_directories(.)
+include_directories(lib)
 
 find_program(LEX_EXE
         flex
@@ -46,47 +47,47 @@ ENDMACRO(LEX_FILE)
 add_compile_options(-Wall)
 
 set(MP3_SRC
-        mp3-read.c
-        mp3-write.c
-        mp3.c
-        aq.c
-        id3.c
+        lib/mp3/mp3-read.c
+        lib/mp3/mp3-write.c
+        lib/mp3/mp3.c
+        lib/mp3/aq.c
+        lib/mp3/id3.c
         )
 
 set(NETWORK_SRC
-        network.c
-        network4.c
-        network6.c
+        lib/system/network.c
+        lib/system/network4.c
+        lib/system/network6.c
         )
 
 set(RTP_SRC
-        rtp.c
-        rtp-rb.c
+        lib/rtp/rtp.c
+        lib/rtp/rtp-rb.c
         )
 set(UTILS_SRC
-        pack.c
-        bv.c
-        sig_set_handler.c
-        dlist.c
-        file.c
-        buf.c
-        crc32.c
-        misc.c
+        lib/pack.c
+        lib/data-structures/bv.c
+        lib/system/sig_set_handler.c
+        lib/data-structures/dlist.c
+        lib/system/file.c
+        lib/data-structures/buf.c
+        lib/math/crc32.c
+        lib/system/misc.c
         )
 set(FEC_SRC
-        galois.c
-        matrix.c
-        fec.c
-        fec-pkt.c
-        fec-rb.c
-        fec-group.c
+        lib/math/galois.c
+        lib/math/matrix.c
+        lib/fec/fec.c
+        lib/fec/fec-pkt.c
+        lib/fec/fec-rb.c
+        lib/fec/fec-group.c
         )
 set(OGG_SRC
-        ogg.c
-        vorbis.c
-        ogg-read.c
-        ogg-write.c
-        vorbis-read.c
+        lib/ogg/ogg.c
+        lib/ogg/vorbis.c
+        lib/ogg/ogg-read.c
+        lib/ogg/ogg-write.c
+        lib/ogg/vorbis-read.c
         )
 
 set(MP3RTP_SRC
@@ -96,61 +97,63 @@ set(MP3RTP_SRC
         ${UTILS_SRC}
         )
 
-YACC_FILE(mp3cue_yacc.y)
-LEX_FILE(mp3cue_lex.l)
+YACC_FILE(tools/mp3cue/mp3cue_yacc.y)
+LEX_FILE(tools/mp3cue/mp3cue_lex.l)
 
 add_executable(mp3cue
         ${MP3_SRC}
         ${UTILS_SRC}
-        mp3cue-main.c
+        tools/mp3cue/mp3cue-main.c
         mp3cue_yacc.c
         mp3cue_lex.c
         )
+# add tools/mp3cue to include path for mp3cue_yacc.c
+target_include_directories(mp3cue PRIVATE tools/mp3cue)
 
 add_executable(mp3cut
         ${MP3_SRC}
         ${UTILS_SRC}
-        mp3cut.c)
+        tools/mp3cut.c)
 
 add_executable(mp3length
         ${MP3_SRC}
         ${UTILS_SRC}
-        mp3length.c)
+        tools/mp3length.c)
 
 add_executable(poc-2250
         ${MP3RTP_SRC}
-        poc-2250.c)
+        servers/poc-2250.c)
 
 add_executable(poc-3119
         ${MP3RTP_SRC}
-        poc-3119.c)
+        servers/poc-3119.c)
 
 add_executable(poc-fec
         ${MP3RTP_SRC}
         ${FEC_SRC}
-        poc-fec.c)
+        servers/poc-fec.c)
 
 add_executable(poc-http
         ${MP3RTP_SRC}
-        http.c
-        poc-http.c)
+        lib/system/http.c
+        servers/poc-http.c)
 
 add_executable(pogg-http
         ${NETWORK_SRC}
         ${UTILS_SRC}
         ${OGG_SRC}
-        http.c
-        pogg-http.c)
+        lib/system/http.c
+        servers/pogg-http.c)
 
 add_executable(pob-2250
         ${MP3RTP_SRC}
-        pob-2250-rb.c)
+        clients/pob-2250-rb.c)
 
 add_executable(pob-3119
         ${MP3RTP_SRC}
-        pob-3119-rb.c)
+        clients/pob-3119-rb.c)
 
 add_executable(pob-fec
         ${MP3RTP_SRC}
         ${FEC_SRC}
-        pob-fec.c)
+        clients/pob-fec.c)
